@@ -49,9 +49,14 @@ export default function ComparePage() {
   const maxSavings = best.received - worst.received;
 
   const handleAmountChange = (val: string) => {
-    setInputVal(val);
-    const num = parseInt(val.replace(/,/g, ""), 10);
-    if (!isNaN(num) && num > 0 && num <= 100000) setAmount(num);
+    const numStr = val.replace(/[^0-9]/g, "");
+    if (!numStr) {
+      setInputVal("");
+      return;
+    }
+    const num = parseInt(numStr, 10);
+    setInputVal(num.toLocaleString("en-US"));
+    if (num > 0 && num <= 100000) setAmount(num);
   };
 
   return (

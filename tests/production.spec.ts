@@ -14,15 +14,15 @@ test.describe('Production E2E Tests', () => {
 
         // Verify "You Receive" column for Wise has a computed value
         // Target the specific row that contains Wise, then check its you-receive cell
-        const wiseRow = page.locator('div[role="row"]:has-text("Wise")');
-        await expect(wiseRow.locator('.font-bold.text-\\[\\#0F2942\\]')).not.toBeEmpty();
+        const wiseRow = page.locator('tr:has-text("Wise")').first();
+        await expect(wiseRow).toContainText('₹');
     });
 
     test('Calculator updates dynamically', async ({ page }) => {
         await page.goto('/');
 
         // Wait for the amount input
-        const input = page.locator('input[type="number"]');
+        const input = page.locator('input[placeholder="2,000"]');
         await expect(input).toBeVisible();
 
         // Clear and type new amount
@@ -43,7 +43,7 @@ test.describe('Production E2E Tests', () => {
         await page.click('button:has-text("Set My Free Alert")');
 
         // Verify success message
-        await expect(page.locator('text=You\'ll be the first to know')).toBeVisible();
+        await expect(page.locator('text=Alert Set')).toBeVisible();
     });
 
     test('Chatbot widget opens', async ({ page }) => {
@@ -57,8 +57,8 @@ test.describe('Production E2E Tests', () => {
     });
 
     test('Static pages load correctly', async ({ page }) => {
-        await page.goto('/guides');
-        await expect(page.locator('text=Guides & Insights')).toBeVisible();
+        await page.goto('/rates');
+        await expect(page.locator('text=Exchange Rate Today')).toBeVisible();
 
         await page.goto('/about');
         await expect(page.locator('text=Our Mission')).toBeVisible();

@@ -138,9 +138,14 @@ export default function HomePage() {
   }, [amount, midMarketRate]);
 
   const handleAmountChange = (val: string) => {
-    setInputVal(val);
-    const num = parseInt(val.replace(/[^0-9]/g, ""));
-    if (!isNaN(num) && num > 0) setAmount(num);
+    const numStr = val.replace(/[^0-9]/g, "");
+    if (!numStr) {
+      setInputVal("");
+      return;
+    }
+    const num = parseInt(numStr, 10);
+    setInputVal(num.toLocaleString("en-US"));
+    if (num > 0) setAmount(num);
   };
 
   const sigConfig: Record<string, { bg: string; border: string; text: string; label: string; icon: string }> = {
@@ -200,10 +205,10 @@ export default function HomePage() {
                     {recommendation.forecast && (
                       <div className="hidden sm:flex items-center gap-2">
                         <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full ${recommendation.forecast.direction === "rising"
-                            ? "bg-emerald-500/15 text-emerald-400"
-                            : recommendation.forecast.direction === "falling"
-                              ? "bg-amber-500/15 text-amber-400"
-                              : "bg-slate-500/15 text-[#7A9CC4]"
+                          ? "bg-emerald-500/15 text-emerald-400"
+                          : recommendation.forecast.direction === "falling"
+                            ? "bg-amber-500/15 text-amber-400"
+                            : "bg-slate-500/15 text-[#7A9CC4]"
                           }`}>
                           {recommendation.forecast.direction === "rising" ? "↑" : recommendation.forecast.direction === "falling" ? "↓" : "→"}{" "}
                           {recommendation.forecast.direction === "rising" ? "Rising" : recommendation.forecast.direction === "falling" ? "Falling" : "Steady"} next {recommendation.forecast.horizon}
