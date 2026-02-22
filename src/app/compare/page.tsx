@@ -11,6 +11,7 @@ export default function ComparePage() {
   const [sortBy, setSortBy] = useState<SortKey>("received");
   const [midMarketRate, setMidMarketRate] = useState(DEFAULT_MID_MARKET_RATE);
   const [dataSource, setDataSource] = useState<string>("cached");
+  const [providerConfigs, setProviderConfigs] = useState<any[] | undefined>(undefined);
 
   useEffect(() => {
     fetch("/api/rates")
@@ -19,13 +20,14 @@ export default function ComparePage() {
         if (data.midMarketRate) {
           setMidMarketRate(data.midMarketRate);
           setDataSource(data.dataSource || "live");
+          if (data.providerConfigs) setProviderConfigs(data.providerConfigs);
         }
       })
       .catch(() => { });
   }, []);
 
   const ranked = useMemo(() => {
-    const platforms = getPlatforms(midMarketRate, amount);
+    const platforms = getPlatforms(midMarketRate, amount, providerConfigs);
     const list = platforms.map((p) => ({
       ...p,
       received: calcReceived(amount, p.rate, p.fee),
@@ -42,7 +44,7 @@ export default function ComparePage() {
     const worst = [...list].sort((a, b) => a.received - b.received)[0].received;
     list.forEach((p) => { p.savings = p.received - worst; });
     return list;
-  }, [amount, sortBy, midMarketRate]);
+  }, [amount, sortBy, midMarketRate, providerConfigs]);
 
   const best = ranked[0];
   const worst = ranked[ranked.length - 1];

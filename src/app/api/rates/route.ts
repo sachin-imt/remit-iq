@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getCachedIntelligence, isIntelligenceFresh, getRecentRates, getLatestRate, cacheIntelligence, getRateCount } from "@/lib/db";
+import { getCachedIntelligence, isIntelligenceFresh, getRecentRates, getLatestRate, cacheIntelligence, getRateCount, getProviderConfigs } from "@/lib/db";
 import { getIntelligenceAsync, computeIntelligenceFromRates } from "@/lib/intelligence";
 import { getPlatforms, getRankedPlatforms } from "@/data/platforms";
 
@@ -12,8 +12,9 @@ export async function GET() {
             const cached = getCachedIntelligence()!;
             const intel = cached.data as Record<string, unknown>;
             const midMarketRate = cached.midMarketRate;
-            const platforms = getPlatforms(midMarketRate);
-            const ranked = getRankedPlatforms(2000, midMarketRate);
+            const providerConfigs = getProviderConfigs();
+            const platforms = getPlatforms(midMarketRate, 2000, providerConfigs);
+            const ranked = getRankedPlatforms(2000, midMarketRate, providerConfigs);
 
             console.log("[RemitIQ API] Serving from pre-computed cache (computed at:", cached.computedAt, ")");
 
@@ -26,6 +27,7 @@ export async function GET() {
                 macroEvents: intel.macroEvents,
                 platforms,
                 ranked,
+                providerConfigs,
                 dataSource: "live",
                 lastUpdated: cached.computedAt,
                 source: "db_cache",
@@ -46,8 +48,9 @@ export async function GET() {
             // Cache the result for next time
             cacheIntelligence(midMarketRate, intel);
 
-            const platforms = getPlatforms(midMarketRate);
-            const ranked = getRankedPlatforms(2000, midMarketRate);
+            const providerConfigs = getProviderConfigs();
+            const platforms = getPlatforms(midMarketRate, 2000, providerConfigs);
+            const ranked = getRankedPlatforms(2000, midMarketRate, providerConfigs);
 
             return NextResponse.json({
                 midMarketRate,
@@ -58,6 +61,7 @@ export async function GET() {
                 macroEvents: intel.macroEvents,
                 platforms,
                 ranked,
+                providerConfigs,
                 dataSource: "live",
                 lastUpdated: new Date().toISOString(),
                 source: "db_recomputed",
@@ -68,8 +72,9 @@ export async function GET() {
         console.log("[RemitIQ API] No persisted rates, fetching live and seeding DB");
 
         const intel = await getIntelligenceAsync();
-        const platforms = getPlatforms(intel.midMarketRate);
-        const ranked = getRankedPlatforms(2000, intel.midMarketRate);
+        const providerConfigs = getProviderConfigs();
+        const platforms = getPlatforms(intel.midMarketRate, 2000, providerConfigs);
+        const ranked = getRankedPlatforms(2000, intel.midMarketRate, providerConfigs);
 
         return NextResponse.json({
             midMarketRate: intel.midMarketRate,
@@ -80,6 +85,7 @@ export async function GET() {
             macroEvents: intel.macroEvents,
             platforms,
             ranked,
+            providerConfigs,
             dataSource: intel.dataSource,
             lastUpdated: new Date().toISOString(),
             source: "api_live",

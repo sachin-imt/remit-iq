@@ -7,6 +7,7 @@
 
 import Database from "better-sqlite3";
 import path from "path";
+import { PROVIDER_DEFINITIONS } from "@/data/platforms";
 
 // ─── Database Connection (singleton) ────────────────────────────────────────
 
@@ -57,6 +58,16 @@ function getDb(): Database.Database {
             computed_at TEXT NOT NULL,
             mid_market_rate REAL NOT NULL,
             data_json TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS provider_configs (
+            platform_id TEXT PRIMARY KEY,
+            margin_pct REAL NOT NULL DEFAULT 0,
+            base_fee REAL NOT NULL DEFAULT 0,
+            fee_pct REAL NOT NULL DEFAULT 0,
+            promo_margin_pct REAL,
+            promo_cap REAL,
+            last_updated TEXT NOT NULL DEFAULT (datetime('now'))
         );
 
         CREATE INDEX IF NOT EXISTS idx_daily_rates_date
@@ -272,6 +283,57 @@ export function getPlatformRatesForDate(date: string): PlatformRate[] {
         WHERE date = ?
         ORDER BY rate DESC
     `).all(date) as PlatformRate[];
+}
+
+// ─── Provider Configs ───────────────────────────────────────────────────────
+
+export interface ProviderConfig {
+    platform_id: string;
+    margin_pct: number;
+    base_fee: number;
+    fee_pct: number;
+    promo_margin_pct: number | null;
+    promo_cap: number | null;
+    last_updated: string;
+}
+
+/**
+ * Get all current provider configurations.
+ * If empty, automatically seeds the database with the hardcoded platform definitions.
+ */
+export function getProviderConfigs(): ProviderConfig[] {
+    const db = getDb();
+    const count = (db.prepare("SELECT COUNT(*) as count FROM provider_configs").get() as { count: number }).count;
+    if (count === 0) {
+        console.log("[RemitIQ DB] Seeding initial provider configs");
+        for (const p of PROVIDER_DEFINITIONS) {
+            updateProviderConfig(p.id, p.marginPct, p.baseFee, p.feePct, p.promoMarginPct, p.promoCap);
+        }
+    }
+
+    return db.prepare(`
+        SELECT platform_id, margin_pct, base_fee, fee_pct, promo_margin_pct, promo_cap, last_updated
+        FROM provider_configs
+    `).all() as ProviderConfig[];
+}
+
+/**
+ * Update configuration for a specific provider.
+ */
+export function updateProviderConfig(
+    platformId: string,
+    marginPct: number,
+    baseFee: number,
+    feePct: number,
+    promoMarginPct: number | null = null,
+    promoCap: number | null = null
+): void {
+    const db = getDb();
+    db.prepare(`
+        INSERT OR REPLACE INTO provider_configs 
+        (platform_id, margin_pct, base_fee, fee_pct, promo_margin_pct, promo_cap, last_updated)
+        VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+    `).run(platformId, marginPct, baseFee, feePct, promoMarginPct, promoCap);
 }
 
 // ─── Alerts ─────────────────────────────────────────────────────────────────

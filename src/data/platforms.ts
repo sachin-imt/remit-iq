@@ -27,7 +27,7 @@ export interface Platform {
  * lastVerified: date when margin was last manually verified against the platform
  * marginSource: where the margin data comes from
  */
-const PROVIDER_DEFINITIONS = [
+export const PROVIDER_DEFINITIONS = [
   { id: "wise", name: "Wise", abbr: "W", marginPct: 0, baseFee: 0.42, feePct: 0.50, speed: "Minutes", speedDays: 0, color: "#00B9FF", stars: 4.8, badge: "BEST RATE" as string | null, paymentMethods: ["Bank Transfer", "Debit Card", "PayID"], affiliateUrl: "https://wise.com/au/send-money/send-money-to-india", promoText: "First transfer free for new users" as string | null, isLive: true, lastVerified: "2026-02-21", marginSource: "Wise public API" },
   { id: "remitly", name: "Remitly", abbr: "R", marginPct: 0.06, baseFee: 0, feePct: 0, promoMarginPct: -0.93, promoCap: 1500, speed: "Minutes", speedDays: 0, color: "#FF6B35", stars: 4.7, badge: "NO FEES" as string | null, paymentMethods: ["Bank Transfer", "Debit Card"], affiliateUrl: "https://www.remitly.com/au/en/india", promoText: "Zero fees on first 3 transfers" as string | null, isLive: false, lastVerified: "2026-02-21", marginSource: "Manual check vs remitly.com" },
   { id: "torfx", name: "TorFX", abbr: "T", marginPct: 0.75, baseFee: 0, feePct: 0, speed: "1-2 days", speedDays: 2, color: "#818CF8", stars: 4.6, badge: null, paymentMethods: ["Bank Transfer"], affiliateUrl: "https://www.torfx.com/", promoText: null, isLive: false, lastVerified: "2026-02-21", marginSource: "Manual check vs torfx.com" },
@@ -40,8 +40,23 @@ const PROVIDER_DEFINITIONS = [
  * Compute platform rates dynamically from the real mid-market rate.
  * Each provider's rate = midMarketRate * (1 - marginPct/100)
  */
-export function getPlatforms(midMarketRate: number, amount: number = 2000): Platform[] {
-  return PROVIDER_DEFINITIONS.map((p) => {
+export function getPlatforms(
+  midMarketRate: number,
+  amount: number = 2000,
+  dynamicConfigs?: { platform_id: string; margin_pct: number; base_fee: number; fee_pct: number; promo_margin_pct: number | null; promo_cap: number | null }[]
+): Platform[] {
+  return PROVIDER_DEFINITIONS.map((baseDef) => {
+    // Override with dynamic config from DB if provided
+    const config = dynamicConfigs?.find((c) => c.platform_id === baseDef.id);
+    const p = {
+      ...baseDef,
+      marginPct: config?.margin_pct ?? baseDef.marginPct,
+      baseFee: config?.base_fee ?? baseDef.baseFee,
+      feePct: config?.fee_pct ?? baseDef.feePct,
+      promoMarginPct: (config?.promo_margin_pct !== undefined && config?.promo_margin_pct !== null) ? config.promo_margin_pct : baseDef.promoMarginPct,
+      promoCap: (config?.promo_cap !== undefined && config?.promo_cap !== null) ? config.promo_cap : baseDef.promoCap,
+    };
+
     let effectiveRate = 0;
 
     // Calculate fee
@@ -93,8 +108,14 @@ export function formatINR(n: number): string {
   return new Intl.NumberFormat("en-IN").format(n);
 }
 
-export function getRankedPlatforms(amount: number, midMarketRate?: number) {
-  const platforms = midMarketRate ? getPlatforms(midMarketRate, amount) : getPlatforms(DEFAULT_MID_MARKET_RATE, amount);
+export function getRankedPlatforms(
+  amount: number,
+  midMarketRate?: number,
+  dynamicConfigs?: { platform_id: string; margin_pct: number; base_fee: number; fee_pct: number; promo_margin_pct: number | null; promo_cap: number | null }[]
+) {
+  const platforms = midMarketRate
+    ? getPlatforms(midMarketRate, amount, dynamicConfigs)
+    : getPlatforms(DEFAULT_MID_MARKET_RATE, amount, dynamicConfigs);
   const ranked = platforms.map((p) => ({
     ...p,
     received: calcReceived(amount, p.rate, p.fee),

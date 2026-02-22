@@ -83,6 +83,7 @@ interface IntelligenceData {
   midMarketRate: number;
   dataSource: "live" | "cached" | "fallback";
   forecast: RateForecast;
+  providerConfigs?: { platform_id: string; margin_pct: number; base_fee: number; fee_pct: number; promo_margin_pct: number | null; promo_cap: number | null }[];
 }
 
 interface RankedPlatform {
@@ -127,7 +128,7 @@ export default function HomePage() {
   const dataSource = intelligence?.dataSource ?? "fallback";
 
   const ranked: RankedPlatform[] = useMemo(() => {
-    const platforms = getPlatforms(midMarketRate, amount);
+    const platforms = getPlatforms(midMarketRate, amount, intelligence?.providerConfigs);
     return platforms
       .map((p) => {
         const received = calcReceived(amount, p.rate, p.fee);
@@ -135,7 +136,7 @@ export default function HomePage() {
       })
       .sort((a, b) => b.received - a.received)
       .map((p, _i, arr) => ({ ...p, savings: p.received - arr[arr.length - 1].received }));
-  }, [amount, midMarketRate]);
+  }, [amount, midMarketRate, intelligence?.providerConfigs]);
 
   const handleAmountChange = (val: string) => {
     const numStr = val.replace(/[^0-9]/g, "");
