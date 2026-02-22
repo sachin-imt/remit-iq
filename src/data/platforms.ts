@@ -126,3 +126,39 @@ export function getRankedPlatforms(
   ranked.forEach((p) => { p.savings = p.received - worst; });
   return ranked;
 }
+
+/**
+ * Dynamically appends the transfer amount to the provider's affiliate URL
+ * using their specific query parameter schema.
+ */
+export function getAffiliateUrlWithAmount(platformId: string, baseUrl: string, amount: number): string {
+  try {
+    const url = new URL(baseUrl);
+
+    switch (platformId) {
+      case "wise":
+        url.searchParams.set("sourceCurrency", "AUD");
+        url.searchParams.set("targetCurrency", "INR");
+        url.searchParams.set("sourceAmount", amount.toString());
+        break;
+      case "remitly":
+        url.searchParams.set("amount", amount.toString());
+        break;
+      case "instarem":
+        url.searchParams.set("sourceAmount", amount.toString());
+        break;
+      case "wu":
+        url.searchParams.set("SendAmount", amount.toString());
+        break;
+      default:
+        // Generic fallback
+        url.searchParams.set("amount", amount.toString());
+        break;
+    }
+
+    return url.toString();
+  } catch (e) {
+    // If URL parsing fails, return the original safely
+    return baseUrl;
+  }
+}

@@ -2,7 +2,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { ArrowUpRight, TrendingUp, Clock, Bell, Shield, Zap, ChevronRight, Star, BarChart3, Loader2 } from "lucide-react";
-import { formatINR, calcReceived, getPlatforms, DEFAULT_MID_MARKET_RATE } from "@/data/platforms";
+import { getRankedPlatforms, formatINR, DEFAULT_MID_MARKET_RATE, getPlatforms, calcReceived, getAffiliateUrlWithAmount } from "@/data/platforms";
 
 interface SignalFactor {
   name: string;
@@ -257,7 +257,7 @@ export default function HomePage() {
                     <td className="px-4 py-2.5 text-right"><p className="text-white font-bold">&#8377;{formatINR(p.received)}</p></td>
                     <td className="px-4 py-2.5 text-center"><span className="text-[#7A9CC4] text-sm">{p.speed}</span></td>
                     <td className="px-4 py-2.5 text-right">{p.savings > 0 ? <p className="text-emerald-400 font-semibold text-sm">+&#8377;{formatINR(p.savings)}</p> : <p className="text-[#7A9CC4] text-xs">baseline</p>}</td>
-                    <td className="px-4 py-2.5"><a href={p.affiliateUrl} target="_blank" rel="noopener noreferrer sponsored"
+                    <td className="px-4 py-2.5"><a href={getAffiliateUrlWithAmount(p.id, p.affiliateUrl, amount)} target="_blank" rel="noopener noreferrer sponsored"
                       className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg font-semibold text-sm transition-all ${i === 0 ? "bg-[#F0B429] text-[#0A1628] hover:bg-yellow-400 glow-gold" : "bg-[#1E3A5F]/50 text-[#C8D8E8] hover:bg-[#1E3A5F]"}`}>
                       Send <ArrowUpRight className="w-3.5 h-3.5" /></a></td>
                   </tr>
@@ -280,7 +280,7 @@ export default function HomePage() {
                 <div className="flex items-center justify-between">
                   <div><p className="text-white font-bold text-lg">&#8377;{formatINR(p.received)}</p>
                     <p className="text-[#7A9CC4] text-xs">Rate: &#8377;{p.rate.toFixed(2)} &middot; Fee: {p.fee === 0 ? "Free" : `$${p.fee}`} &middot; {p.speed}</p></div>
-                  <a href={p.affiliateUrl} target="_blank" rel="noopener noreferrer sponsored"
+                  <a href={getAffiliateUrlWithAmount(p.id, p.affiliateUrl, amount)} target="_blank" rel="noopener noreferrer sponsored"
                     className={`px-3 py-1.5 rounded-lg font-semibold text-sm ${i === 0 ? "bg-[#F0B429] text-[#0A1628]" : "bg-[#1E3A5F]/50 text-[#C8D8E8]"}`}>Send</a>
                 </div>
               </div>

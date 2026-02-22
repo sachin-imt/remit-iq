@@ -1,7 +1,7 @@
 "use client";
 import { useState, useMemo, useEffect } from "react";
 import { ArrowUpRight, Star, CheckCircle, Zap, Clock, Loader2 } from "lucide-react";
-import { getRankedPlatforms, formatINR, DEFAULT_MID_MARKET_RATE, getPlatforms, calcReceived } from "@/data/platforms";
+import { getRankedPlatforms, formatINR, DEFAULT_MID_MARKET_RATE, getPlatforms, calcReceived, getAffiliateUrlWithAmount } from "@/data/platforms";
 
 type SortKey = "received" | "rate" | "fee" | "speed" | "stars";
 
@@ -112,7 +112,7 @@ export default function ComparePage() {
                 <div><p className="text-[#7A9CC4] text-xs">You Receive</p><p className="text-white font-bold text-xl">&#8377;{formatINR(p.received)}</p>{p.savings > 0 && <p className="text-emerald-400 text-xs font-semibold">+&#8377;{formatINR(p.savings)} vs worst</p>}</div>
               </div>
               <div className="md:w-32 flex md:justify-end">
-                <a href={p.affiliateUrl} target="_blank" rel="noopener noreferrer sponsored"
+                <a href={getAffiliateUrlWithAmount(p.id, p.affiliateUrl, amount)} target="_blank" rel="noopener noreferrer sponsored"
                   className={`inline-flex items-center gap-1.5 px-5 py-3 rounded-xl font-semibold text-sm transition-all w-full md:w-auto justify-center ${i === 0 ? "bg-[#F0B429] text-[#0A1628] hover:bg-yellow-400 glow-gold" : "bg-[#1E3A5F]/50 text-[#C8D8E8] hover:bg-[#1E3A5F]"}`}>
                   Send Now <ArrowUpRight className="w-4 h-4" /></a>
               </div>
