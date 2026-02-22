@@ -5,10 +5,10 @@ import { getRankedPlatforms } from "@/data/platforms";
 
 export const dynamic = 'force-dynamic';
 
-const resend = new Resend(process.env.RESEND_API_KEY!);
-
 export async function GET(request: Request) {
     try {
+        const resend = new Resend(process.env.RESEND_API_KEY || "missing_key_during_build");
+
         const authHeader = request.headers.get("authorization");
         if (
             process.env.NODE_ENV === "production" &&
