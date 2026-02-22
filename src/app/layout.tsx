@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import ChatWidget from "@/components/ChatWidget";
+import { Analytics } from "@vercel/analytics/react";
 
 export const metadata: Metadata = {
-  title: "RemitIQ — Best AUD to INR Rate Today | Compare & Save on Remittances",
-  description: "Compare live exchange rates across Wise, Remitly, OFX, and 6+ platforms. Find the cheapest way to send money from Australia to India. AI-powered timing tells you whether to send now or wait.",
-  keywords: ["send money Australia to India", "AUD to INR rate today", "best remittance Australia India", "Wise vs Remitly Australia", "cheapest way to send AUD to INR", "AUD INR forecast"],
-  openGraph: { title: "RemitIQ — Kayak for Remittances", description: "Compare rates across 6+ platforms. Know the best time to send money from Australia to India.", type: "website", locale: "en_AU", siteName: "RemitIQ" },
+  title: "RemitIQ: Best AUD to INR Exchange Rate | Compare & Send Money to India",
+  description: "Compare live exchange rates across Wise, Remitly, OFX, and 6+ platforms. Find the cheapest way to send money from Australia to India today. AI-powered timing tells you whether to send now or wait.",
+  keywords: ["send money Australia to India", "AUD to INR rate today", "best remittance Australia India", "Wise vs Remitly Australia", "cheapest way to send AUD to INR", "AUD INR forecast", "compare remittance to India"],
+  openGraph: { title: "RemitIQ: Best AUD to INR Exchange Rate", description: "Compare rates across 6+ platforms to find the cheapest way to send money to India.", type: "website", locale: "en_AU", siteName: "RemitIQ" },
   robots: { index: true, follow: true },
 };
 
@@ -57,6 +58,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         </footer>
         <ChatWidget />
+        <Analytics />
       </body>
     </html>
   );

@@ -63,12 +63,13 @@ export default function ComparePage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
+      <title>Compare Remittance Providers | Wise vs Remitly vs Western Union etc</title>
       <div className="mb-8">
         <div className="flex items-center gap-2 mb-2">
-          <h1 className="text-3xl font-extrabold text-white">Compare Money Transfer Rates &mdash; Australia to India</h1>
+          <h1 className="text-3xl font-extrabold text-white">Compare Remittance Providers: Best Way to Send Money to India</h1>
           {dataSource === "live" && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">LIVE</span>}
         </div>
-        <p className="text-[#7A9CC4]">Live rates from {ranked.length} platforms. Ranked by total INR received after all fees.</p>
+        <p className="text-[#7A9CC4]">Compare live exchange rates from {ranked.length} platforms. Ranked by total INR received after all fees.</p>
         <p className="text-[#7A9CC4] text-xs mt-1">Mid-market rate: &#8377;{midMarketRate.toFixed(2)} (ECB)</p>
       </div>
       <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -78,7 +79,7 @@ export default function ComparePage() {
         </div>
         <div className="md:w-48">
           <label className="block text-[#7A9CC4] text-sm mb-1">Sort by</label>
-          <select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortKey)} className="w-full bg-[#111D32] border border-[#1E3A5F] rounded-xl py-3 px-4 text-white focus:outline-none focus:border-[#F0B429]">
+          <select aria-label="Sort comparison results" value={sortBy} onChange={(e) => setSortBy(e.target.value as SortKey)} className="w-full bg-[#111D32] border border-[#1E3A5F] rounded-xl py-3 px-4 text-white focus:outline-none focus:border-[#F0B429]">
             <option value="received">Best value (INR received)</option>
             <option value="rate">Exchange rate</option>
             <option value="fee">Lowest fee</option>

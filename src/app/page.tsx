@@ -164,9 +164,9 @@ export default function HomePage() {
         <div className="mx-auto max-w-6xl px-4 pt-6 pb-4 relative">
           <div className="text-center max-w-3xl mx-auto mb-5">
             <h1 className="text-3xl md:text-4xl font-extrabold text-white leading-tight mb-2">
-              Find the best rate to send money <span className="text-[#F0B429]">from Australia to India</span>
+              Compare the best AUD to INR exchange rates <span className="text-[#F0B429]">to send money to India</span>
             </h1>
-            <p className="text-[#7A9CC4] text-base">Compare live rates across 6+ platforms. Our AI tells you the best platform <em>and</em> the best time to send.</p>
+            <p className="text-[#7A9CC4] text-base">Compare live remittance rates across 6+ platforms. Our AI tells you the cheapest way to send and the best time to transfer.</p>
           </div>
           {/* Amount Input — full width with step guidance */}
           <div className="max-w-2xl mx-auto mb-3">
@@ -176,7 +176,7 @@ export default function HomePage() {
             </label>
             <div className="relative group">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7A9CC4] font-semibold text-lg">AUD</span>
-              <input type="text" value={inputVal} onChange={(e) => handleAmountChange(e.target.value)}
+              <input type="text" aria-label="Enter Amount in AUD to Send to India" value={inputVal} onChange={(e) => handleAmountChange(e.target.value)}
                 className="w-full bg-[#111D32] border-2 border-[#1E3A5F] rounded-xl py-4 px-4 pl-16 text-right text-2xl font-bold text-white focus:outline-none focus:border-[#F0B429] transition-all placeholder:text-[#3A5575]" placeholder="2,000" />
               <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3A5575] group-focus-within:text-[#F0B429] transition-colors" />
             </div>
@@ -403,7 +403,7 @@ export default function HomePage() {
           ))}
         </div>
         <div className="text-[#7A9CC4] text-xs leading-relaxed text-center max-w-3xl mx-auto space-y-2">
-          <p>Every year, Indians in Australia send over $7.3 billion home. The difference between the best and worst deal on a $2,000 transfer can exceed &#8377;3,000. RemitIQ compares live rates and uses AI to help you pick the right time — no conflicts of interest.</p>
+          <p>Every year, Indians in Australia send over $7.3 billion home. The difference between the best and worst deal on a $2,000 AUD to INR transfer can exceed &#8377;3,000. RemitIQ compares live remittance rates and uses AI to help you find the cheapest way to send money to India — no hidden fees, no conflicts of interest.</p>
         </div>
       </section>
     </div>
