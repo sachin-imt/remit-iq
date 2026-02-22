@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body { background: #0A1628; color: #C8D8E8; }
+html { scroll-behavior: smooth; }
+.glow-gold { box-shadow: 0 0 20px rgba(240,180,41,0.15); }
+.glow-gold:hover { box-shadow: 0 0 30px rgba(240,180,41,0.25); }
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="number"] { -moz-appearance: textfield; }

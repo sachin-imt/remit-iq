@@ -1,0 +1,77 @@
+export interface Platform {
+  id: string;
+  name: string;
+  abbr: string;
+  rate: number;
+  fee: number;
+  speed: string;
+  speedDays: number;
+  color: string;
+  stars: number;
+  badge: string | null;
+  paymentMethods: string[];
+  affiliateUrl: string;
+  promoText: string | null;
+  marginPct: number; // FX margin as a percentage of mid-market rate
+}
+
+/**
+ * Provider margin definitions — the percentage each provider marks up from mid-market.
+ * These are realistic margins derived from actual provider behavior (Feb 2026 data).
+ *
+ * isLive: true if rate comes from a real API, false if estimated from margin
+ * lastVerified: date when margin was last manually verified against the platform
+ * marginSource: where the margin data comes from
+ */
+const PROVIDER_DEFINITIONS = [
+  { id: "wise", name: "Wise", abbr: "W", marginPct: 0.34, fee: 3.99, speed: "Minutes", speedDays: 0, color: "#00B9FF", stars: 4.8, badge: "BEST RATE" as string | null, paymentMethods: ["Bank Transfer", "Debit Card", "PayID"], affiliateUrl: "https://wise.com/au/send-money/send-money-to-india", promoText: "First transfer free for new users" as string | null, isLive: true, lastVerified: "2026-02-21", marginSource: "Wise public API" },
+  { id: "remitly", name: "Remitly", abbr: "R", marginPct: 0.56, fee: 0, speed: "Minutes", speedDays: 0, color: "#FF6B35", stars: 4.7, badge: "NO FEES" as string | null, paymentMethods: ["Bank Transfer", "Debit Card"], affiliateUrl: "https://www.remitly.com/au/en/india", promoText: "Zero fees on first 3 transfers" as string | null, isLive: false, lastVerified: "2026-02-21", marginSource: "Manual check vs remitly.com" },
+  { id: "torfx", name: "TorFX", abbr: "T", marginPct: 0.75, fee: 0, speed: "1-2 days", speedDays: 2, color: "#818CF8", stars: 4.6, badge: null, paymentMethods: ["Bank Transfer"], affiliateUrl: "https://www.torfx.com/", promoText: null, isLive: false, lastVerified: "2026-02-21", marginSource: "Manual check vs torfx.com" },
+  { id: "ofx", name: "OFX", abbr: "O", marginPct: 0.86, fee: 0, speed: "1-2 days", speedDays: 2, color: "#34D399", stars: 4.5, badge: null, paymentMethods: ["Bank Transfer"], affiliateUrl: "https://www.ofx.com/en-au/", promoText: "No fees on transfers over $1,000" as string | null, isLive: false, lastVerified: "2026-02-21", marginSource: "Manual check vs ofx.com" },
+  { id: "instarem", name: "Instarem", abbr: "I", marginPct: 1.03, fee: 1.99, speed: "Same day", speedDays: 0.5, color: "#FBBF24", stars: 4.4, badge: null, paymentMethods: ["Bank Transfer", "PayID"], affiliateUrl: "https://www.instarem.com/en-au/", promoText: null, isLive: false, lastVerified: "2026-02-21", marginSource: "Manual check vs instarem.com" },
+  { id: "wu", name: "Western Union", abbr: "WU", marginPct: 1.86, fee: 4.99, speed: "Minutes", speedDays: 0, color: "#F87171", stars: 3.9, badge: null, paymentMethods: ["Bank Transfer", "Debit Card", "Cash"], affiliateUrl: "https://www.westernunion.com/au/en/home.html", promoText: null, isLive: false, lastVerified: "2026-02-21", marginSource: "Manual check vs westernunion.com" },
+];
+
+/**
+ * Compute platform rates dynamically from the real mid-market rate.
+ * Each provider's rate = midMarketRate * (1 - marginPct/100)
+ */
+export function getPlatforms(midMarketRate: number): Platform[] {
+  return PROVIDER_DEFINITIONS.map((p) => ({
+    ...p,
+    rate: parseFloat((midMarketRate * (1 - p.marginPct / 100)).toFixed(2)),
+  }));
+}
+
+/**
+ * Legacy constant — still used as a fallback when async data isn't available.
+ * Will be overridden by real data at runtime.
+ */
+export const DEFAULT_MID_MARKET_RATE = 64.10;
+
+/**
+ * Legacy PLATFORMS array — uses default mid-market rate for backward compatibility.
+ * Prefer getPlatforms(realMidMarketRate) when you have live data.
+ */
+export const PLATFORMS: Platform[] = getPlatforms(DEFAULT_MID_MARKET_RATE);
+
+export function calcReceived(amount: number, rate: number, fee: number): number {
+  return Math.round((amount - fee) * rate);
+}
+
+export function formatINR(n: number): string {
+  return new Intl.NumberFormat("en-IN").format(n);
+}
+
+export function getRankedPlatforms(amount: number, midMarketRate?: number) {
+  const platforms = midMarketRate ? getPlatforms(midMarketRate) : PLATFORMS;
+  const ranked = platforms.map((p) => ({
+    ...p,
+    received: calcReceived(amount, p.rate, p.fee),
+    savings: 0,
+  }));
+  ranked.sort((a, b) => b.received - a.received);
+  const worst = ranked[ranked.length - 1].received;
+  ranked.forEach((p) => { p.savings = p.received - worst; });
+  return ranked;
+}
