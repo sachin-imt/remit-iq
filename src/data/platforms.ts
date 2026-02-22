@@ -145,10 +145,12 @@ export function getAffiliateUrlWithAmount(platformId: string, baseUrl: string, a
         url.searchParams.set("amount", amount.toString());
         break;
       case "instarem":
-        url.searchParams.set("sourceAmount", amount.toString());
+        // Instarem does not support URL amount parameters on their landing page
         break;
       case "wu":
         url.searchParams.set("SendAmount", amount.toString());
+        url.searchParams.set("ReceiveCountry", "IN");
+        url.searchParams.set("ISOCurrency", "INR");
         break;
       default:
         // Generic fallback
