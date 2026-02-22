@@ -127,7 +127,7 @@ export default function HomePage() {
   const dataSource = intelligence?.dataSource ?? "fallback";
 
   const ranked: RankedPlatform[] = useMemo(() => {
-    const platforms = getPlatforms(midMarketRate);
+    const platforms = getPlatforms(midMarketRate, amount);
     return platforms
       .map((p) => {
         const received = calcReceived(amount, p.rate, p.fee);

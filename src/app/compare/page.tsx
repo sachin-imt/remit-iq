@@ -25,7 +25,7 @@ export default function ComparePage() {
   }, []);
 
   const ranked = useMemo(() => {
-    const platforms = getPlatforms(midMarketRate);
+    const platforms = getPlatforms(midMarketRate, amount);
     const list = platforms.map((p) => ({
       ...p,
       received: calcReceived(amount, p.rate, p.fee),
