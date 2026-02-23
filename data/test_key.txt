@@ -1,0 +1,8 @@
+Generated Key: rq_fca873f2d1b210e005a10553b69eed7a57e5e94d05f85559
+Validation Test: {
+  id: 1,
+  key_hash: 'rq_fca873f2d1b210e005a10553b69eed7a57e5e94d05f85559',
+  client_name: 'TestCorp',
+  tier: 'pro',
+  created_at: '2026-02-23 07:47:01'
+}

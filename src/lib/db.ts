@@ -89,6 +89,14 @@ function getDb(): Database.Database {
 
         CREATE INDEX IF NOT EXISTS idx_alerts_active
         ON alerts(is_active, target_rate);
+
+        CREATE TABLE IF NOT EXISTS api_keys (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            key_hash TEXT NOT NULL UNIQUE,
+            client_name TEXT NOT NULL,
+            tier TEXT NOT NULL DEFAULT 'freemium',
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
     `);
 
     return _db;
@@ -410,5 +418,45 @@ export function getAlertCount(): { active: number; total: number } {
     const active = (db.prepare("SELECT COUNT(*) as count FROM alerts WHERE is_active = 1").get() as { count: number }).count;
     const total = (db.prepare("SELECT COUNT(*) as count FROM alerts").get() as { count: number }).count;
     return { active, total };
+}
+
+// ─── API Keys (B2B) ─────────────────────────────────────────────────────────
+
+export interface ApiKey {
+    id: number;
+    key_hash: string;
+    client_name: string;
+    tier: string;
+    created_at: string;
+}
+
+/**
+ * Insert a new API key.
+ * Returns the plain-text key (which is only returned once) and the record ID.
+ */
+export function createApiKey(clientName: string, tier: string = "freemium"): { key: string, id: number } {
+    // Generate a secure random API key
+    const crypto = require("crypto");
+    const key = "rq_" + crypto.randomBytes(24).toString("hex");
+
+    const db = getDb();
+    const result = db.prepare(`
+        INSERT INTO api_keys (key_hash, client_name, tier)
+        VALUES (?, ?, ?)
+    `).run(key, clientName, tier);
+
+    return { key, id: result.lastInsertRowid as number };
+}
+
+/**
+ * Validate an API key and return the associated client details if valid.
+ */
+export function validateApiKey(key: string): ApiKey | null {
+    const db = getDb();
+    const row = db.prepare(`
+        SELECT * FROM api_keys WHERE key_hash = ?
+    `).get(key) as ApiKey | undefined;
+
+    return row || null;
 }
 
