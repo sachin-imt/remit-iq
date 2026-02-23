@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, TrendingUp } from 'lucide-react';
+import { getAllPosts } from '@/lib/mdx';
 
 export const metadata: Metadata = {
   title: 'RemitIQ Blog | Money Transfer Insights & Guides',
@@ -12,58 +13,11 @@ export const metadata: Metadata = {
   },
 };
 
-const posts = [
-  {
-    id: 1,
-    title: 'I Compared 8 Ways to Send $2,000 from Australia to India (2026)',
-    slug: 'best-way-send-money-australia-india-2026',
-    excerpt: 'A detailed breakdown of 8 remittance methods with fees, exchange rates, and delivery times. Find out which option saves you the most money.',
-    featured: true,
-    readTime: 12,
-    date: '2026-02-15',
-  },
-  {
-    id: 2,
-    title: 'Wise vs Remitly for Australia to India: 2026 Comparison',
-    slug: 'wise-vs-remitly',
-    excerpt: 'Head-to-head comparison of two popular money transfer apps. See which one offers better rates and when to use each service.',
-    featured: false,
-    readTime: 8,
-    date: '2026-02-10',
-  },
-  {
-    id: 3,
-    title: 'When Is the Best Time to Send Money from Australia to India?',
-    slug: 'best-time-to-send',
-    excerpt: 'Learn how RBA decisions, commodity prices, and RBI policy affect exchange rates. Timing your transfer right can save thousands.',
-    featured: true,
-    readTime: 10,
-    date: '2026-02-08',
-  },
-  {
-    id: 4,
-    title: 'NRE vs NRO Account: Which Is Better for Indians in Australia?',
-    slug: 'nre-vs-nro-account',
-    excerpt: 'Understanding the tax and regulatory implications of NRE and NRO accounts when receiving money from Australia.',
-    featured: false,
-    readTime: 7,
-    date: '2026-02-01',
-  },
-  {
-    id: 5,
-    title: 'How Indian Students in Australia Send Money Home',
-    slug: 'indian-students-send-money',
-    excerpt: 'Student-specific guide covering part-time work restrictions, affordable transfer methods, and managing finances abroad.',
-    featured: false,
-    readTime: 9,
-    date: '2026-01-25',
-  },
-];
-
-const featuredPosts = posts.filter((post) => post.featured);
-const allPosts = posts;
-
 export default function BlogPage() {
+  const posts = getAllPosts();
+  const featuredPosts = posts.filter((post) => post.featured);
+  const allPosts = posts;
+
   return (
     <main className="min-h-screen" style={{ backgroundColor: '#0A1628' }}>
       {/* Hero Section */}
@@ -102,7 +56,7 @@ export default function BlogPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {featuredPosts.map((post) => (
-                <Link key={post.id} href={`/blog/${post.slug}`}>
+                <Link key={post.slug} href={`/blog/${post.slug}`}>
                   <article
                     className="h-full p-6 rounded-lg border-2 transition-all hover:shadow-lg cursor-pointer"
                     style={{
@@ -169,7 +123,7 @@ export default function BlogPage() {
 
           <div className="space-y-4">
             {allPosts.map((post) => (
-              <Link key={post.id} href={`/blog/${post.slug}`}>
+              <Link key={post.slug} href={`/blog/${post.slug}`}>
                 <article
                   className="p-6 rounded-lg border-2 transition-all hover:border-[#F0B429] cursor-pointer"
                   style={{
@@ -219,6 +173,12 @@ export default function BlogPage() {
                 </article>
               </Link>
             ))}
+
+            {allPosts.length === 0 && (
+              <div className="bg-[#111D32] border border-[#1E3A5F] rounded-2xl p-8 text-center">
+                <p className="text-[#7A9CC4]">No articles published yet. Check back soon!</p>
+              </div>
+            )}
           </div>
         </div>
       </section>
