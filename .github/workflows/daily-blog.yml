@@ -1,0 +1,43 @@
+name: Daily AI Insights Writer
+
+on:
+  schedule:
+    # Run every day at 23:00 UTC (9:00 AM AEST)
+    - cron: '0 23 * * *'
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  generate-and-publish:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Daily Insight Post
+        run: npx tsx src/scripts/generate-daily-post.ts
+
+      - name: Commit and Push new MDX
+        run: |
+          git config --global user.name "RemitIQ Content Bot"
+          git config --global user.email "bot@remitiq.co"
+          git add src/content/blog/*.mdx
+          
+          # Only commit if there are actually changes
+          if git diff --staged --quiet; then
+            echo "No new MDX files created today."
+          else
+            git commit -m "content: Added daily market insight post"
+            git push origin main
+          fi
