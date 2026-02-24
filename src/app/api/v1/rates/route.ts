@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
         }
 
         const apiKey = authHeader.split(" ")[1];
-        const client = validateApiKey(apiKey);
+        const client = await validateApiKey(apiKey);
 
         if (!client) {
             return NextResponse.json({ error: "Unauthorized. Invalid API Key." }, { status: 403 });
@@ -26,26 +26,26 @@ export async function GET(request: NextRequest) {
         let intelPayload;
         let midMarketRate;
 
-        if (isIntelligenceFresh(24)) {
-            const cached = getCachedIntelligence()!;
+        if (await isIntelligenceFresh(24)) {
+            const cached = (await getCachedIntelligence())!;
             intelPayload = cached.data as any;
             midMarketRate = cached.midMarketRate;
         } else {
             // Unlikely to hit this in production due to cron, but safe fallback
-            const rateCount = getRateCount();
+            const rateCount = await getRateCount();
             if (rateCount >= 30) {
-                const persistedRates = getRecentRates(180);
-                const latestRate = getLatestRate();
+                const persistedRates = await getRecentRates(180);
+                const latestRate = await getLatestRate();
                 midMarketRate = latestRate?.mid_market || 64.10;
                 intelPayload = computeIntelligenceFromRates(persistedRates, midMarketRate);
-                cacheIntelligence(midMarketRate, intelPayload);
+                await cacheIntelligence(midMarketRate, intelPayload);
             } else {
                 intelPayload = await getIntelligenceAsync();
                 midMarketRate = intelPayload.midMarketRate;
             }
         }
 
-        const providerConfigs = getProviderConfigs();
+        const providerConfigs = await getProviderConfigs();
         const ranked = getRankedPlatforms(2000, midMarketRate, providerConfigs); // Default 2k for standard comparative payload
 
         // 3. Format the strict B2B JSON Contract

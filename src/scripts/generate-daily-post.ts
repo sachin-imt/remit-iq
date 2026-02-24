@@ -43,10 +43,12 @@ async function generateDailyPost() {
 
     // 2. FETCH MARKET INTELLIGENCE
     console.log("📊 Fetching live market data from SQLite cache...");
-    const cachedData = getCachedIntelligence();
+    const cachedData = await getCachedIntelligence();
     const midRate = cachedData ? cachedData.midMarketRate : '64.00';
-    const action = cachedData?.data?.recommendation?.signal || 'WAIT';
-    const confidence = cachedData?.data?.recommendation?.confidence || 50;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const dataObj = cachedData?.data as any;
+    const action = dataObj?.recommendation?.signal || 'WAIT';
+    const confidence = dataObj?.recommendation?.confidence || 50;
 
     // 3. GENERATE PROGRAMMATIC MDX 
     console.log("📝 Building MDX Template...");

@@ -29,7 +29,7 @@ export async function POST(request: Request) {
         const validTypes = ["rate", "platform", "both"];
         const type = validTypes.includes(alertType) ? alertType : "both";
 
-        const id = insertAlert(email, targetRate, type);
+        const id = await insertAlert(email, targetRate, type);
 
         console.log(`[Alerts] New alert #${id}: ${email} → ₹${targetRate} (${type})`);
 
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
 
 export async function GET() {
     try {
-        const counts = getAlertCount();
+        const counts = await getAlertCount();
         return NextResponse.json(counts);
     } catch (error) {
         console.error("[Alerts] Error getting stats:", error);

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import ChatWidget from "@/components/ChatWidget";
-import { Analytics } from "@vercel/analytics/react";
+import AnalyticsWrapper from "@/components/AnalyticsWrapper";
+import CookieConsent from "@/components/CookieConsent";
 
 export const metadata: Metadata = {
   title: "RemitIQ: Best AUD to INR Exchange Rate | Compare & Send Money to India",
@@ -49,7 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </div>
               <div><h3 className="text-white font-semibold mb-3 text-sm">Tools</h3><ul className="space-y-2 text-sm text-[#7A9CC4]"><li><a href="/" className="hover:text-white">Rate Comparison</a></li><li><a href="/alerts" className="hover:text-white">Rate Alerts</a></li></ul></div>
               <div><h3 className="text-white font-semibold mb-3 text-sm">Learn</h3><ul className="space-y-2 text-sm text-[#7A9CC4]"><li><a href="/blog" className="hover:text-white">Guides & Articles</a></li><li><a href="/blog/wise-vs-remitly" className="hover:text-white">Wise vs Remitly</a></li><li><a href="/blog/best-time-to-send" className="hover:text-white">Best Time to Send</a></li></ul></div>
-              <div><h3 className="text-white font-semibold mb-3 text-sm">Company</h3><ul className="space-y-2 text-sm text-[#7A9CC4]"><li><a href="/about" className="hover:text-white">About RemitIQ</a></li><li><a href="/about#methodology" className="hover:text-white">Our Methodology</a></li><li><a href="/about#privacy" className="hover:text-white">Privacy Policy</a></li></ul></div>
+              <div><h3 className="text-white font-semibold mb-3 text-sm">Company</h3><ul className="space-y-2 text-sm text-[#7A9CC4]"><li><a href="/about" className="hover:text-white">About RemitIQ</a></li><li><a href="/about#methodology" className="hover:text-white">Our Methodology</a></li><li><a href="/privacy" className="hover:text-white">Privacy Policy</a></li></ul></div>
             </div>
             <div className="mt-10 pt-6 border-t border-[#1E3A5F] flex flex-col md:flex-row justify-between items-center gap-4">
               <p className="text-[#7A9CC4] text-xs">&copy; 2026 RemitIQ. All rights reserved.</p>
@@ -58,7 +59,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         </footer>
         <ChatWidget />
-        <Analytics />
+        <AnalyticsWrapper />
+        <CookieConsent />
       </body>
     </html>
   );

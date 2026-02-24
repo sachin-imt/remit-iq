@@ -4,12 +4,12 @@
  * GET /api/cron/refresh-rates
  *
  * Called daily by Vercel Cron (or manually). Fetches latest rate from
- * Wise API (with Frankfurter fallback), persists to SQLite, computes
+ * Wise API (with Frankfurter fallback), persists to Postgres, computes
  * per-platform rates, pre-computes intelligence, and sends alert emails.
  */
 
 import { NextResponse } from "next/server";
-import { fetchHistoricalRates, fetchLatestRate, fetchLongTermHistory } from "@/lib/rate-service";
+import { fetchLatestRate, fetchLongTermHistory } from "@/lib/rate-service";
 import {
     insertDailyRate,
     insertDailyRatesBulk,
@@ -41,7 +41,7 @@ export async function GET(request: Request) {
 
     try {
         // ── Step 1: Seed historical data if DB is sparse ───────────────────
-        const existingCount = getRateCount();
+        const existingCount = await getRateCount();
         log.push(`Existing rates in DB: ${existingCount}`);
 
         if (existingCount < 100) {
@@ -56,7 +56,7 @@ export async function GET(request: Request) {
                 source: longTermResult.source,
             }));
 
-            const inserted = insertDailyRatesBulk(bulkData);
+            const inserted = await insertDailyRatesBulk(bulkData);
             log.push(`Seeded ${inserted} historical rates (source: ${longTermResult.source})`);
         }
 
@@ -67,7 +67,7 @@ export async function GET(request: Request) {
         const today = new Date().toISOString().split("T")[0];
         const bestRate = parseFloat((latestMidMarket * (1 - 0.0034)).toFixed(2));
 
-        const wasInserted = insertDailyRate(today, latestMidMarket, bestRate, rateSource);
+        const wasInserted = await insertDailyRate(today, latestMidMarket, bestRate, rateSource);
         log.push(
             wasInserted
                 ? `Inserted today's rate: ₹${latestMidMarket} (${today}, source: ${rateSource})`
@@ -84,22 +84,22 @@ export async function GET(request: Request) {
             source: p.id === "wise" ? "wise_api" : "estimated_margin",
         }));
 
-        const platformCount = insertPlatformRates(today, platformRateData);
+        const platformCount = await insertPlatformRates(today, platformRateData);
         log.push(`Persisted ${platformCount} platform rates for ${today}`);
 
         // ── Step 4: Compute intelligence from persisted data ───────────────
-        const persistedRates = getRecentRates(180);
+        const persistedRates = await getRecentRates(180);
         log.push(`Computing intelligence from ${persistedRates.length} persisted rates`);
 
         const intelligence = computeIntelligenceFromRates(persistedRates, latestMidMarket);
 
         // ── Step 5: Cache the computed intelligence ────────────────────────
-        cacheIntelligence(latestMidMarket, intelligence);
+        await cacheIntelligence(latestMidMarket, intelligence);
         log.push("Intelligence cached successfully");
 
         // ── Step 6: Check and send rate alerts ─────────────────────────────
         let alertsTriggered = 0;
-        const matchingAlerts = getActiveRateAlerts(bestRate);
+        const matchingAlerts = await getActiveRateAlerts(bestRate);
         log.push(`Found ${matchingAlerts.length} alerts to trigger (best rate: ₹${bestRate})`);
 
         for (const alert of matchingAlerts) {
@@ -111,7 +111,7 @@ export async function GET(request: Request) {
             });
 
             if (sent) {
-                markAlertTriggered(alert.id, bestRate);
+                await markAlertTriggered(alert.id, bestRate);
                 alertsTriggered++;
                 log.push(`Alert #${alert.id} triggered → ${alert.email} (target: ₹${alert.target_rate})`);
             } else {
@@ -126,7 +126,7 @@ export async function GET(request: Request) {
             success: true,
             midMarketRate: latestMidMarket,
             rateSource,
-            ratesInDb: getRateCount(),
+            ratesInDb: await getRateCount(),
             platformsStored: platformCount,
             signal: intelligence.recommendation.signal,
             confidence: intelligence.recommendation.confidence,
@@ -146,4 +146,3 @@ export async function GET(request: Request) {
         );
     }
 }
-

@@ -17,12 +17,12 @@ export async function GET(request: Request) {
             return new Response("Unauthorized", { status: 401 });
         }
 
-        const cached = getCachedIntelligence();
+        const cached = await getCachedIntelligence();
         if (!cached) {
             return NextResponse.json({ error: "No cached intelligence found" }, { status: 500 });
         }
 
-        const providerConfigs = getProviderConfigs();
+        const providerConfigs = await getProviderConfigs();
         const midMarketRate = cached.midMarketRate;
         const ranked = getRankedPlatforms(2000, midMarketRate, providerConfigs);
         const bestPlatform = ranked[0];
@@ -31,7 +31,7 @@ export async function GET(request: Request) {
         const currentRate = bestPlatform.rate;
 
         // Find alerts where target_rate <= currentRate
-        const triggeredAlerts = getActiveRateAlerts(currentRate);
+        const triggeredAlerts = await getActiveRateAlerts(currentRate);
 
         let emailsSent = 0;
 
@@ -58,7 +58,7 @@ export async function GET(request: Request) {
                 });
 
                 // Mark alert as triggered so it doesn't fire again
-                markAlertTriggered(alert.id, currentRate);
+                await markAlertTriggered(alert.id, currentRate);
                 emailsSent++;
                 console.log(`[Cron: Alerts] Triggered alert #${alert.id} for ${alert.email} at rate ${currentRate}`);
             } catch (err) {

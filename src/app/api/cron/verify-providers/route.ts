@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { updateProviderConfig, getProviderConfigs } from "@/lib/db";
 
-// Force edge rendering if needed, though better-sqlite3 requires Node
-// export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
@@ -45,13 +43,13 @@ export async function GET(request: Request) {
                 const actualFeePct = parseFloat((bankOption.feePercentage * 100).toFixed(2));
 
                 // Get existing configs to preserve defaults
-                const existingConfigs = getProviderConfigs();
+                const existingConfigs = await getProviderConfigs();
                 const wiseDb = existingConfigs.find(c => c.platform_id === "wise");
 
                 const baseFee = wiseDb?.base_fee ?? 0.42; // Fallback to our existing knowledge
                 const marginPct = wiseDb?.margin_pct ?? 0;
 
-                updateProviderConfig("wise", marginPct, baseFee, actualFeePct);
+                await updateProviderConfig("wise", marginPct, baseFee, actualFeePct);
                 results.push(`Wise verified: feePct ${actualFeePct}%`);
             } else {
                 results.push(`Wise verified: could not extract feePercentage`);
@@ -63,7 +61,7 @@ export async function GET(request: Request) {
     }
 
     // 2. Other Providers (Placeholder for future API integrations)
-    // Instarem and Remitly will continue to use their seed data 
+    // Instarem and Remitly will continue to use their seed data
     // from the database until their API extraction is implemented
     results.push(`Remitly verified: using cached DB config`);
     results.push(`Instarem verified: using cached DB config`);

@@ -8,11 +8,11 @@ export const revalidate = 300; // ISR: revalidate every 5 minutes
 export async function GET() {
     try {
         // ── Try serving from pre-computed cache first ───────────────────────
-        if (isIntelligenceFresh(24)) {
-            const cached = getCachedIntelligence()!;
+        if (await isIntelligenceFresh(24)) {
+            const cached = (await getCachedIntelligence())!;
             const intel = cached.data as Record<string, unknown>;
             const midMarketRate = cached.midMarketRate;
-            const providerConfigs = getProviderConfigs();
+            const providerConfigs = await getProviderConfigs();
             const platforms = getPlatforms(midMarketRate, 2000, providerConfigs);
             const ranked = getRankedPlatforms(2000, midMarketRate, providerConfigs);
 
@@ -35,20 +35,20 @@ export async function GET() {
         }
 
         // ── Fallback: try computing from persisted rates ───────────────────
-        const rateCount = getRateCount();
+        const rateCount = await getRateCount();
         if (rateCount >= 30) {
             console.log("[RemitIQ API] Cache stale, recomputing from", rateCount, "persisted rates");
 
-            const persistedRates = getRecentRates(180);
-            const latestRate = getLatestRate();
+            const persistedRates = await getRecentRates(180);
+            const latestRate = await getLatestRate();
             const midMarketRate = latestRate?.mid_market || 64.10;
 
             const intel = computeIntelligenceFromRates(persistedRates, midMarketRate);
 
             // Cache the result for next time
-            cacheIntelligence(midMarketRate, intel);
+            await cacheIntelligence(midMarketRate, intel);
 
-            const providerConfigs = getProviderConfigs();
+            const providerConfigs = await getProviderConfigs();
             const platforms = getPlatforms(midMarketRate, 2000, providerConfigs);
             const ranked = getRankedPlatforms(2000, midMarketRate, providerConfigs);
 
@@ -72,7 +72,7 @@ export async function GET() {
         console.log("[RemitIQ API] No persisted rates, fetching live and seeding DB");
 
         const intel = await getIntelligenceAsync();
-        const providerConfigs = getProviderConfigs();
+        const providerConfigs = await getProviderConfigs();
         const platforms = getPlatforms(intel.midMarketRate, 2000, providerConfigs);
         const ranked = getRankedPlatforms(2000, intel.midMarketRate, providerConfigs);
 
