@@ -24,7 +24,7 @@ const FROM_EMAIL = "RemitIQ Alerts <alerts@remitiq.co>";
 const FROM_EMAIL_PRIVACY = "RemitIQ Privacy <privacy@remitiq.co>";
 
 // CAN-SPAM requires a physical mailing address in commercial emails
-const PHYSICAL_ADDRESS = "RemitIQ · Melbourne, VIC, Australia";
+const PHYSICAL_ADDRESS = "RemitIQ · Sydney, NSW, Australia";
 
 const EMAIL_FOOTER = `
     <div style="border-top:1px solid #1E3A5F;margin-top:24px;padding-top:16px;">
