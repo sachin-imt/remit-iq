@@ -49,6 +49,12 @@ test.describe('Production E2E Tests', () => {
     test('Chatbot widget opens', async ({ page }) => {
         await page.goto('/');
 
+        // Dismiss cookie consent banner if present (it overlaps the chatbot FAB)
+        const rejectBtn = page.locator('button:has-text("Reject")');
+        if (await rejectBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+            await rejectBtn.click();
+        }
+
         // Click floating action button
         await page.click('button.bg-\\[\\#F0B429\\]');
 
