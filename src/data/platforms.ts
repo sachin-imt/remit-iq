@@ -28,7 +28,7 @@ export interface Platform {
  * marginSource: where the margin data comes from
  */
 export const PROVIDER_DEFINITIONS = [
-  { id: "wise", name: "Wise", abbr: "W", marginPct: 0, baseFee: 0.42, feePct: 0.50, speed: "Minutes", speedDays: 0, color: "#00B9FF", stars: 4.8, badge: "BEST RATE" as string | null, paymentMethods: ["Bank Transfer", "Debit Card", "PayID"], affiliateUrl: "https://wise.com/au/send-money/send-money-to-india", promoText: "First transfer free for new users" as string | null, isLive: true, lastVerified: "2026-02-21", marginSource: "Wise public API" },
+  { id: "wise", name: "Wise", abbr: "W", marginPct: 0, baseFee: 0.42, feePct: 0.50, speed: "Minutes", speedDays: 0, color: "#00B9FF", stars: 4.8, badge: "BEST RATE" as string | null, paymentMethods: ["Bank Transfer", "Debit Card", "PayID"], affiliateUrl: "https://wise.prf.hn/click/camref:1011l5Dt0l", promoText: "First transfer free for new users" as string | null, isLive: true, lastVerified: "2026-03-02", marginSource: "Wise public API" },
   { id: "remitly", name: "Remitly", abbr: "R", marginPct: 0.06, baseFee: 0, feePct: 0, promoMarginPct: -0.93, promoCap: 1500, speed: "Minutes", speedDays: 0, color: "#FF6B35", stars: 4.7, badge: "NO FEES" as string | null, paymentMethods: ["Bank Transfer", "Debit Card"], affiliateUrl: "https://www.remitly.com/au/en/india", promoText: "Zero fees on first 3 transfers" as string | null, isLive: false, lastVerified: "2026-02-21", marginSource: "Manual check vs remitly.com" },
   { id: "torfx", name: "TorFX", abbr: "T", marginPct: 0.75, baseFee: 0, feePct: 0, speed: "1-2 days", speedDays: 2, color: "#818CF8", stars: 4.6, badge: null, paymentMethods: ["Bank Transfer"], affiliateUrl: "https://www.torfx.com/", promoText: null, isLive: false, lastVerified: "2026-02-21", marginSource: "Manual check vs torfx.com" },
   { id: "ofx", name: "OFX", abbr: "O", marginPct: 0.86, baseFee: 0, feePct: 0, speed: "1-2 days", speedDays: 2, color: "#34D399", stars: 4.5, badge: null, paymentMethods: ["Bank Transfer"], affiliateUrl: "https://www.ofx.com/en-au/", promoText: "No fees on transfers over $1,000" as string | null, isLive: false, lastVerified: "2026-02-21", marginSource: "Manual check vs ofx.com" },
@@ -128,39 +128,53 @@ export function getRankedPlatforms(
 }
 
 /**
- * Dynamically appends the transfer amount to the provider's affiliate URL
- * using their specific query parameter schema.
+ * Dynamically constructs affiliate URLs with transfer amount and tracking.
+ * 
+ * For Wise (via Partnerize): builds a deeplink through the Partnerize tracker
+ *   Format: {baseTrackingLink}/pubref:{placement}/destination:{encodedDeeplink}
+ * For other providers: appends query params to their direct URLs.
  */
-export function getAffiliateUrlWithAmount(platformId: string, baseUrl: string, amount: number): string {
+export function getAffiliateUrlWithAmount(
+  platformId: string,
+  baseUrl: string,
+  amount: number,
+  pubref: string = "compare"
+): string {
   try {
+    if (platformId === "wise") {
+      // Construct the Wise deeplink destination URL
+      const deeplink = new URL("https://wise.com/au/send-money/send-money-to-india");
+      deeplink.searchParams.set("sourceCurrency", "AUD");
+      deeplink.searchParams.set("targetCurrency", "INR");
+      deeplink.searchParams.set("sourceAmount", amount.toString());
+
+      // Build the full Partnerize tracking URL with pubref and encoded deeplink
+      const encodedDestination = encodeURIComponent(deeplink.toString());
+      return `${baseUrl}/pubref:${pubref}/destination:${encodedDestination}`;
+    }
+
+    // All other providers: append params to their direct URL
     const url = new URL(baseUrl);
 
     switch (platformId) {
-      case "wise":
-        url.searchParams.set("sourceCurrency", "AUD");
-        url.searchParams.set("targetCurrency", "INR");
-        url.searchParams.set("sourceAmount", amount.toString());
-        break;
       case "remitly":
         url.searchParams.set("amount", amount.toString());
-        break;
-      case "instarem":
-        // Instarem does not support URL amount parameters on their landing page
         break;
       case "wu":
         url.searchParams.set("SendAmount", amount.toString());
         url.searchParams.set("ReceiveCountry", "IN");
         url.searchParams.set("ISOCurrency", "INR");
         break;
+      case "instarem":
+        // Instarem does not support URL amount parameters
+        break;
       default:
-        // Generic fallback
         url.searchParams.set("amount", amount.toString());
         break;
     }
 
     return url.toString();
-  } catch (e) {
-    // If URL parsing fails, return the original safely
+  } catch {
     return baseUrl;
   }
 }

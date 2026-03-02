@@ -94,7 +94,7 @@ export default function LiveRateEmbed({ providerA, providerB }: { providerA: str
                             </div>
                         </div>
 
-                        <a href={getAffiliateUrlWithAmount(p.id, p.affiliateUrl, amount)} target="_blank" rel="noopener noreferrer sponsored"
+                        <a href={getAffiliateUrlWithAmount(p.id, p.affiliateUrl, amount, "blog-embed")} target="_blank" rel="noopener noreferrer sponsored"
                             className={`w-full inline-flex justify-center items-center gap-1.5 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${p.id === winner.id ? 'bg-[#F0B429] text-[#0A1628] hover:bg-yellow-400 glow-gold' : 'bg-[#1E3A5F]/50 text-[#C8D8E8] hover:bg-[#1E3A5F]'}`}>
                             Transfer via {p.name} <ArrowUpRight className="w-4 h-4" />
                         </a>

@@ -113,7 +113,7 @@ export default function ComparePage() {
                 <div><p className="text-[#7A9CC4] text-xs">You Receive</p><p className="text-white font-bold text-xl">&#8377;{formatINR(p.received)}</p>{p.savings > 0 && <p className="text-emerald-400 text-xs font-semibold">+&#8377;{formatINR(p.savings)} vs worst</p>}</div>
               </div>
               <div className="md:w-32 flex md:justify-end">
-                <a href={getAffiliateUrlWithAmount(p.id, p.affiliateUrl, amount)} target="_blank" rel="noopener noreferrer sponsored"
+                <a href={getAffiliateUrlWithAmount(p.id, p.affiliateUrl, amount, "compare")} target="_blank" rel="noopener noreferrer sponsored"
                   className={`inline-flex items-center gap-1.5 px-5 py-3 rounded-xl font-semibold text-sm transition-all w-full md:w-auto justify-center ${i === 0 ? "bg-[#F0B429] text-[#0A1628] hover:bg-yellow-400 glow-gold" : "bg-[#1E3A5F]/50 text-[#C8D8E8] hover:bg-[#1E3A5F]"}`}>
                   Send Now <ArrowUpRight className="w-4 h-4" /></a>
               </div>
@@ -132,6 +132,7 @@ export default function ComparePage() {
           <p>Rates are derived from real-time ECB mid-market data with provider-specific margins applied. Rankings are purely by value to you &mdash; we never boost rankings based on commercial relationships.</p>
         </div>
       </div>
+      <p className="text-[#4A6A8A] text-[10px] text-center mt-6">Affiliate disclosure: RemitIQ may earn a commission if you sign up through some of our links. This does not affect our rankings or editorial independence.</p>
     </div>
   );
 }
