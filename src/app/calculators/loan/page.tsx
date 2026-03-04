@@ -155,8 +155,8 @@ export default function LoanCalculatorPage() {
                                             key={y}
                                             onClick={() => setYears(y)}
                                             className={`py-2 rounded-lg text-sm font-semibold transition-all ${years === y
-                                                    ? 'bg-[#00B9FF] text-[#0A1628]'
-                                                    : 'bg-[#0D1B2E] border border-[#1E3A5F] text-[#7A9CC4] hover:text-white hover:border-[#7A9CC4]'
+                                                ? 'bg-[#00B9FF] text-[#0A1628]'
+                                                : 'bg-[#0D1B2E] border border-[#1E3A5F] text-[#7A9CC4] hover:text-white hover:border-[#7A9CC4]'
                                                 }`}
                                         >
                                             {y}y
@@ -239,22 +239,22 @@ export default function LoanCalculatorPage() {
                                                 tick={{ fill: "#7A9CC4", fontSize: 12 }}
                                                 axisLine={false}
                                                 tickLine={false}
-                                                tickFormatter={(v) => \`Year \${v}\`} 
-                      />
+                                                tickFormatter={(v) => `Year ${v}`}
+                                            />
                                             <YAxis
                                                 tick={{ fill: "#7A9CC4", fontSize: 12 }}
                                                 axisLine={false}
                                                 tickLine={false}
                                                 width={60}
-                                                tickFormatter={(v) => \`$\${(v / 1000).toFixed(0)}k\`} 
-                      />
+                                                tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
+                                            />
                                             <Tooltip
                                                 contentStyle={{ background: "#0D1B2E", border: "1px solid #1E3A5F", borderRadius: '8px' }}
                                                 itemStyle={{ color: "#fff" }}
                                                 labelStyle={{ color: "#7A9CC4", marginBottom: '4px' }}
-                                                formatter={(value: number) => [\`$\${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}\`, '']}
-                                            labelFormatter={(label) => \`Year \${label}\`}
-                      />
+                                                formatter={(value: number) => [`$${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`, '']}
+                                                labelFormatter={(label) => `Year ${label}`}
+                                            />
                                             <Area type="monotone" dataKey="balance" name="Remaining Balance" stroke="#00B9FF" strokeWidth={3} fillOpacity={1} fill="url(#colorBalance)" />
                                             <Area type="monotone" dataKey="interest" name="Cumulative Interest" stroke="#F43F5E" strokeWidth={3} fillOpacity={1} fill="url(#colorInterest)" />
                                         </AreaChart>

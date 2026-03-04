@@ -18,7 +18,7 @@ export default function MortgageCalculatorPage() {
         const r = rate / 100 / 12;
         const n = years * 12;
 
-        if (loanAmount <= 0) return { pni: 0, tax: 0, insurance: 0, total: 0, amortization: [], breakdown: [] };
+        if (loanAmount <= 0) return { loanAmount: 0, pni: 0, tax: 0, insurance: 0, total: 0, amortization: [], breakdown: [] };
 
         // Principal and Interest
         const pni = r > 0
@@ -282,14 +282,14 @@ export default function MortgageCalculatorPage() {
                                                     stroke="none"
                                                 >
                                                     {breakdown.map((entry, index) => (
-                                                        <Cell key={\`cell-\${index}\`} fill={entry.color} />
-                          ))}
+                                                        <Cell key={`cell-${index}`} fill={entry.color} />
+                                                    ))}
                                                 </Pie>
                                                 <Tooltip
-                                                    formatter={(value: number) => \`$\${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}\`}
-                                                contentStyle={{ background: "#0D1B2E", border: "1px solid #1E3A5F", borderRadius: '8px', fontSize: '12px' }}
-                                                itemStyle={{ color: "#fff" }}
-                        />
+                                                    formatter={(value: number) => `$${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                                                    contentStyle={{ background: "#0D1B2E", border: "1px solid #1E3A5F", borderRadius: '8px', fontSize: '12px' }}
+                                                    itemStyle={{ color: "#fff" }}
+                                                />
                                             </PieChart>
                                         </ResponsiveContainer>
                                     ) : (
@@ -336,22 +336,22 @@ export default function MortgageCalculatorPage() {
                                                 tick={{ fill: "#7A9CC4", fontSize: 12 }}
                                                 axisLine={false}
                                                 tickLine={false}
-                                                tickFormatter={(v) => \`Year \${v}\`} 
-                      />
+                                                tickFormatter={(v) => `Year ${v}`}
+                                            />
                                             <YAxis
                                                 tick={{ fill: "#7A9CC4", fontSize: 12 }}
                                                 axisLine={false}
                                                 tickLine={false}
                                                 width={60}
-                                                tickFormatter={(v) => \`$\${(v / 1000).toFixed(0)}k\`} 
-                      />
+                                                tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
+                                            />
                                             <Tooltip
                                                 contentStyle={{ background: "#0D1B2E", border: "1px solid #1E3A5F", borderRadius: '8px' }}
                                                 itemStyle={{ color: "#fff" }}
                                                 labelStyle={{ color: "#7A9CC4", marginBottom: '4px' }}
-                                                formatter={(value: number) => [\`$\${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}\`, 'Balance']}
-                                            labelFormatter={(label) => \`Remaining Balance (Year \${label})\`}
-                      />
+                                                formatter={(value: number) => [`$${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`, 'Balance']}
+                                                labelFormatter={(label) => `Remaining Balance (Year ${label})`}
+                                            />
                                             <Area type="monotone" dataKey="balance" name="Remaining Balance" stroke="#F0B429" strokeWidth={3} fillOpacity={1} fill="url(#colorMortgage)" />
                                         </AreaChart>
                                     </ResponsiveContainer>
