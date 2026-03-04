@@ -31,10 +31,10 @@ export default function CookieConsent() {
     return (
         <div
             className="fixed bottom-0 left-0 right-0 z-[9999] border-t px-4 py-4"
-            style={{ backgroundColor: "#111D32", borderColor: "#1E3A5F" }}
+            style={{ backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' }}
         >
             <div className="mx-auto max-w-4xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <p className="text-sm" style={{ color: "#C8D8E8" }}>
+                <p className="text-sm" style={{ color: '#334155' }}>
                     We use analytics cookies to understand how you use RemitIQ and improve your experience.{" "}
                     <a href="/privacy" className="underline" style={{ color: "#F0B429" }}>
                         Privacy Policy
@@ -43,8 +43,8 @@ export default function CookieConsent() {
                 <div className="flex items-center gap-3 flex-shrink-0">
                     <button
                         onClick={handleReject}
-                        className="px-4 py-2 rounded-lg text-sm font-medium border transition-colors hover:text-white"
-                        style={{ borderColor: "#1E3A5F", color: "#7A9CC4" }}
+                        className="px-4 py-2 rounded-lg text-sm font-medium border transition-colors hover:text-slate-900"
+                        style={{ borderColor: '#E2E8F0', color: '#64748B' }}
                     >
                         Reject
                     </button>

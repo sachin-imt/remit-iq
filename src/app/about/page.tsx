@@ -3,14 +3,14 @@ import { Shield, TrendingUp, Users, Zap } from 'lucide-react';
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#0A1628' }}>
+    <div className="min-h-screen" style={{ backgroundColor: '#F8FAFC' }}>
       {/* Header */}
-      <div className="border-b" style={{ borderColor: '#1E3A5F', backgroundColor: '#111D32' }}>
+      <div className="border-b" style={{ borderColor: '#E2E8F0', backgroundColor: '#F8FAFC' }}>
         <div className="max-w-5xl mx-auto px-6 py-16">
-          <h1 className="text-5xl font-bold mb-4" style={{ color: '#C8D8E8' }}>
+          <h1 className="text-5xl font-bold mb-4" style={{ color: '#334155' }}>
             About RemitIQ
           </h1>
-          <p className="text-xl leading-relaxed max-w-2xl" style={{ color: '#7A9CC4' }}>
+          <p className="text-xl leading-relaxed max-w-2xl" style={{ color: '#64748B' }}>
             Empowering informed remittance decisions through transparent, real-time exchange rate intelligence.
           </p>
         </div>
@@ -22,17 +22,17 @@ export default function AboutPage() {
           <div
             className="rounded-lg p-10 border"
             style={{
-              backgroundColor: '#111D32',
-              borderColor: '#1E3A5F',
+              backgroundColor: '#F8FAFC',
+              borderColor: '#E2E8F0',
             }}
           >
             <h2 className="text-3xl font-bold mb-6" style={{ color: '#F0B429' }}>
               Our Mission
             </h2>
-            <p className="text-lg leading-relaxed mb-4" style={{ color: '#C8D8E8' }}>
+            <p className="text-lg leading-relaxed mb-4" style={{ color: '#334155' }}>
               RemitIQ exists to solve a critical problem: diaspora communities send over $800 billion annually in remittances, yet they often lack transparent, trustworthy information about the best rates and platforms available.
             </p>
-            <p className="text-lg leading-relaxed" style={{ color: '#C8D8E8' }}>
+            <p className="text-lg leading-relaxed" style={{ color: '#334155' }}>
               We're building the information layer for the remittance industry—aggregating real-time exchange rates, compliance data, and community insights to help people send money smarter, safer, and with confidence.
             </p>
           </div>
@@ -40,7 +40,7 @@ export default function AboutPage() {
 
         {/* Values Grid */}
         <section className="mb-24">
-          <h2 className="text-3xl font-bold mb-10" style={{ color: '#C8D8E8' }}>
+          <h2 className="text-3xl font-bold mb-10" style={{ color: '#334155' }}>
             Our Values
           </h2>
 
@@ -73,8 +73,8 @@ export default function AboutPage() {
                   key={idx}
                   className="rounded-lg p-8 border transition-all duration-200"
                   style={{
-                    backgroundColor: '#111D32',
-                    borderColor: '#1E3A5F',
+                    backgroundColor: '#F8FAFC',
+                    borderColor: '#E2E8F0',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.borderColor = '#F0B429';
@@ -92,10 +92,10 @@ export default function AboutPage() {
                       strokeWidth={1.5}
                     />
                   </div>
-                  <h3 className="text-xl font-bold mb-3" style={{ color: '#C8D8E8' }}>
+                  <h3 className="text-xl font-bold mb-3" style={{ color: '#334155' }}>
                     {value.title}
                   </h3>
-                  <p className="leading-relaxed" style={{ color: '#7A9CC4' }}>
+                  <p className="leading-relaxed" style={{ color: '#64748B' }}>
                     {value.desc}
                   </p>
                 </div>
@@ -109,11 +109,11 @@ export default function AboutPage() {
           <div
             className="rounded-lg p-10 border"
             style={{
-              backgroundColor: '#111D32',
-              borderColor: '#1E3A5F',
+              backgroundColor: '#F8FAFC',
+              borderColor: '#E2E8F0',
             }}
           >
-            <h2 className="text-3xl font-bold mb-8" style={{ color: '#C8D8E8' }}>
+            <h2 className="text-3xl font-bold mb-8" style={{ color: '#334155' }}>
               Our Methodology
             </h2>
 
@@ -122,7 +122,7 @@ export default function AboutPage() {
                 <h3 className="text-lg font-semibold mb-2" style={{ color: '#F0B429' }}>
                   Data Collection
                 </h3>
-                <p style={{ color: '#7A9CC4' }}>
+                <p style={{ color: '#64748B' }}>
                   We aggregate exchange rate data from multiple official sources, partner platforms, and market feeds. Our infrastructure updates rates every 30 seconds across 50+ remittance corridors.
                 </p>
               </div>
@@ -136,7 +136,7 @@ export default function AboutPage() {
                 <h3 className="text-lg font-semibold mb-2" style={{ color: '#F0B429' }}>
                   Quality Assurance
                 </h3>
-                <p style={{ color: '#7A9CC4' }}>
+                <p style={{ color: '#64748B' }}>
                   Every rate is validated against historical trends and real-time market data. We flag anomalies and maintain audit trails for transparency.
                 </p>
               </div>
@@ -150,7 +150,7 @@ export default function AboutPage() {
                 <h3 className="text-lg font-semibold mb-2" style={{ color: '#F0B429' }}>
                   Compliance & Verification
                 </h3>
-                <p style={{ color: '#7A9CC4' }}>
+                <p style={{ color: '#64748B' }}>
                   All platforms are verified for regulatory compliance, security certifications, and customer protections. We maintain detailed compliance profiles for each corridor.
                 </p>
               </div>
@@ -164,7 +164,7 @@ export default function AboutPage() {
                 <h3 className="text-lg font-semibold mb-2" style={{ color: '#F0B429' }}>
                   Community Intelligence
                 </h3>
-                <p style={{ color: '#7A9CC4' }}>
+                <p style={{ color: '#64748B' }}>
                   We aggregate feedback, reviews, and real experiences from community members. This contextual layer helps you understand which platforms work best for your corridor.
                 </p>
               </div>
@@ -177,15 +177,15 @@ export default function AboutPage() {
           <div
             className="rounded-lg p-10 border"
             style={{
-              backgroundColor: '#111D32',
-              borderColor: '#1E3A5F',
+              backgroundColor: '#F8FAFC',
+              borderColor: '#E2E8F0',
             }}
           >
-            <h2 className="text-3xl font-bold mb-6" style={{ color: '#C8D8E8' }}>
+            <h2 className="text-3xl font-bold mb-6" style={{ color: '#334155' }}>
               How We Make Money
             </h2>
 
-            <p className="text-lg leading-relaxed mb-6" style={{ color: '#7A9CC4' }}>
+            <p className="text-lg leading-relaxed mb-6" style={{ color: '#64748B' }}>
               We believe in transparency about how we earn money. When you click through to a platform and make a transfer, we earn a referral commission from that platform. This is how we keep RemitIQ free.
             </p>
 
@@ -196,7 +196,7 @@ export default function AboutPage() {
                   style={{ backgroundColor: '#F0B429' }}
                 />
                 <div>
-                  <p className="font-semibold" style={{ color: '#C8D8E8' }}>
+                  <p className="font-semibold" style={{ color: '#334155' }}>
                     Referral Commissions: We earn a small commission when you transfer through our partner links
                   </p>
                 </div>
@@ -208,7 +208,7 @@ export default function AboutPage() {
                   style={{ backgroundColor: '#F0B429' }}
                 />
                 <div>
-                  <p className="font-semibold" style={{ color: '#C8D8E8' }}>
+                  <p className="font-semibold" style={{ color: '#334155' }}>
                     Rankings are never influenced: We always rank by the total INR you receive — the best deal for you comes first, regardless of who pays us more
                   </p>
                 </div>
@@ -220,14 +220,14 @@ export default function AboutPage() {
                   style={{ backgroundColor: '#F0B429' }}
                 />
                 <div>
-                  <p className="font-semibold" style={{ color: '#C8D8E8' }}>
+                  <p className="font-semibold" style={{ color: '#334155' }}>
                     No hidden fees: We never add margins or charge you anything. The rate you see is the rate the platform offers
                   </p>
                 </div>
               </div>
             </div>
 
-            <p className="text-sm mt-8 pt-8 border-t" style={{ borderColor: '#1E3A5F', color: '#7A9CC4' }}>
+            <p className="text-sm mt-8 pt-8 border-t" style={{ borderColor: '#E2E8F0', color: '#64748B' }}>
               Our incentive is simple: if we help you find the best deal, you trust us and come back. That trust is worth more than any commission.
             </p>
           </div>
@@ -238,11 +238,11 @@ export default function AboutPage() {
           <div
             className="rounded-lg p-10 border"
             style={{
-              backgroundColor: '#111D32',
-              borderColor: '#1E3A5F',
+              backgroundColor: '#F8FAFC',
+              borderColor: '#E2E8F0',
             }}
           >
-            <h2 className="text-3xl font-bold mb-6" style={{ color: '#C8D8E8' }}>
+            <h2 className="text-3xl font-bold mb-6" style={{ color: '#334155' }}>
               Your Privacy & Data
             </h2>
 
@@ -251,7 +251,7 @@ export default function AboutPage() {
                 <h3 className="font-semibold mb-2" style={{ color: '#F0B429' }}>
                   Data We Collect
                 </h3>
-                <p style={{ color: '#7A9CC4' }}>
+                <p style={{ color: '#64748B' }}>
                   We only collect what's necessary: email for alerts, search history for trends, and feedback for community insights. We never sell personal data.
                 </p>
               </div>
@@ -260,7 +260,7 @@ export default function AboutPage() {
                 <h3 className="font-semibold mb-2" style={{ color: '#F0B429' }}>
                   How We Protect It
                 </h3>
-                <p style={{ color: '#7A9CC4' }}>
+                <p style={{ color: '#64748B' }}>
                   All data is encrypted in transit and at rest. We comply with GDPR, CCPA, and emerging privacy standards. Your financial information is never stored.
                 </p>
               </div>
@@ -269,7 +269,7 @@ export default function AboutPage() {
                 <h3 className="font-semibold mb-2" style={{ color: '#F0B429' }}>
                   Your Rights
                 </h3>
-                <p style={{ color: '#7A9CC4' }}>
+                <p style={{ color: '#64748B' }}>
                   You can access, export, or delete your data anytime. Our privacy policy is clear, plain language—no legal jargon hiding bad practices.
                 </p>
               </div>

@@ -87,14 +87,14 @@ export default function ManageDataPage() {
 
     return (
         <div className="container mx-auto px-4 py-16 max-w-2xl">
-            <div className="bg-[#111D32] border border-[#1E3A5F] rounded-2xl p-8 shadow-2xl">
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-8 shadow-2xl">
                 <div className="flex items-center gap-3 mb-8">
-                    <div className="bg-[#1E3A5F] p-3 rounded-xl">
+                    <div className="bg-slate-100 p-3 rounded-xl">
                         <ShieldCheck className="w-8 h-8 text-[#4ADE80]" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-white">Manage Your Data</h1>
-                        <p className="text-[#7A9CC4] text-sm mt-1">GDPR & Privacy Center</p>
+                        <h1 className="text-2xl font-bold text-slate-900">Manage Your Data</h1>
+                        <p className="text-slate-500 text-sm mt-1">GDPR & Privacy Center</p>
                     </div>
                 </div>
 
@@ -107,13 +107,13 @@ export default function ManageDataPage() {
 
                 {step === "request" && (
                     <form onSubmit={handleRequestCode} className="space-y-6">
-                        <p className="text-[#C8D8E8] text-sm leading-relaxed">
+                        <p className="text-slate-700 text-sm leading-relaxed">
                             Enter your email address below. We'll send you a secure 6-digit verification code to access your RemitIQ data dashboard.
                         </p>
 
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-[#C8D8E8] mb-2">Email Address</label>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">Email Address</label>
                                 <div className="relative">
                                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4A6A8A]" />
                                     <input
@@ -121,7 +121,7 @@ export default function ManageDataPage() {
                                         required
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
-                                        className="w-full bg-[#0A1628] border border-[#1E3A5F] focus:border-[#F0B429] rounded-xl py-3 pl-12 pr-4 text-white outline-none transition-colors"
+                                        className="w-full bg-slate-50 border border-slate-200 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 rounded-xl py-3 pl-12 pr-4 text-slate-900 outline-none transition-colors"
                                         placeholder="you@example.com"
                                     />
                                 </div>
@@ -130,7 +130,7 @@ export default function ManageDataPage() {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full bg-[#F0B429] hover:bg-[#e0a623] text-[#0A1628] font-bold py-3.5 px-6 rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                                className="w-full bg-[#F0B429] hover:bg-[#e0a623] text-slate-900 font-bold py-3.5 px-6 rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                             >
                                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowRight className="w-5 h-5" />}
                                 Send Verification Code
@@ -141,13 +141,13 @@ export default function ManageDataPage() {
 
                 {step === "verify" && (
                     <form onSubmit={handleVerify} className="space-y-6">
-                        <p className="text-[#C8D8E8] text-sm leading-relaxed">
-                            We sent a 6-digit code to <strong className="text-white">{email}</strong>. Entering this code verifies you own this email address.
+                        <p className="text-slate-700 text-sm leading-relaxed">
+                            We sent a 6-digit code to <strong className="text-slate-900">{email}</strong>. Entering this code verifies you own this email address.
                         </p>
 
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-[#C8D8E8] mb-2">Verification Code</label>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">Verification Code</label>
                                 <div className="relative">
                                     <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4A6A8A]" />
                                     <input
@@ -156,7 +156,7 @@ export default function ManageDataPage() {
                                         maxLength={6}
                                         value={code}
                                         onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, ''))}
-                                        className="w-full bg-[#0A1628] border border-[#1E3A5F] focus:border-[#F0B429] rounded-xl py-3 pl-12 pr-4 text-white outline-none transition-colors text-lg tracking-widest font-mono"
+                                        className="w-full bg-slate-50 border border-slate-200 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 rounded-xl py-3 pl-12 pr-4 text-slate-900 outline-none transition-colors text-lg tracking-widest font-mono"
                                         placeholder="000000"
                                     />
                                 </div>
@@ -165,7 +165,7 @@ export default function ManageDataPage() {
                             <button
                                 type="submit"
                                 disabled={loading || code.length !== 6}
-                                className="w-full bg-[#4ADE80] hover:bg-[#22c55e] text-[#0A1628] font-bold py-3.5 px-6 rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                                className="w-full bg-[#4ADE80] hover:bg-[#22c55e] text-slate-900 font-bold py-3.5 px-6 rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                             >
                                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShieldCheck className="w-5 h-5" />}
                                 Verify & Access Data
@@ -175,7 +175,7 @@ export default function ManageDataPage() {
                                 <button
                                     type="button"
                                     onClick={() => setStep("request")}
-                                    className="text-sm text-[#7A9CC4] hover:text-white"
+                                    className="text-sm text-slate-500 hover:text-slate-900"
                                 >
                                     &larr; Use a different email
                                 </button>
@@ -186,23 +186,23 @@ export default function ManageDataPage() {
 
                 {step === "dashboard" && (
                     <div className="space-y-6">
-                        <div className="bg-[#0D1B2E] border border-[#1E3A5F] rounded-xl p-5">
-                            <h3 className="text-white font-semibold mb-2">Active Email Alerts</h3>
-                            <p className="text-[#7A9CC4] text-xs mb-4">The following alerts are currently tied to {email}.</p>
+                        <div className="bg-white border border-slate-200 rounded-xl p-5">
+                            <h3 className="text-slate-900 font-semibold mb-2">Active Email Alerts</h3>
+                            <p className="text-slate-500 text-xs mb-4">The following alerts are currently tied to {email}.</p>
 
                             {alerts.length === 0 ? (
-                                <div className="text-center py-6 border border-dashed border-[#1E3A5F] rounded-lg">
-                                    <p className="text-[#7A9CC4] text-sm">You have no active alerts on RemitIQ.</p>
+                                <div className="text-center py-6 border border-dashed border-slate-200 rounded-lg">
+                                    <p className="text-slate-500 text-sm">You have no active alerts on RemitIQ.</p>
                                 </div>
                             ) : (
                                 <ul className="space-y-3">
                                     {alerts.map((alert, i) => (
-                                        <li key={i} className="flex justify-between items-center bg-[#0A1628] border border-[#1E3A5F] p-4 rounded-lg">
+                                        <li key={i} className="flex justify-between items-center bg-slate-50 border border-slate-200 p-4 rounded-lg">
                                             <div>
-                                                <span className="text-sm font-medium text-white block">Target: ₹{alert.target_rate}</span>
-                                                <span className="text-xs text-[#7A9CC4]">Created {new Date(alert.created_at).toLocaleDateString()}</span>
+                                                <span className="text-sm font-medium text-slate-900 block">Target: ₹{alert.target_rate}</span>
+                                                <span className="text-xs text-slate-500">Created {new Date(alert.created_at).toLocaleDateString()}</span>
                                             </div>
-                                            <div className="bg-[#111D32] px-3 py-1 rounded text-xs text-[#F0B429] border border-[#1E3A5F]">
+                                            <div className="bg-slate-50 px-3 py-1 rounded text-xs text-[#F0B429] border border-slate-200">
                                                 {alert.alert_type === 'both' ? 'All' : alert.alert_type}
                                             </div>
                                         </li>
@@ -211,12 +211,12 @@ export default function ManageDataPage() {
                             )}
                         </div>
 
-                        <div className="border-t border-[#1E3A5F] pt-6">
+                        <div className="border-t border-slate-200 pt-6">
                             <div className="flex items-start gap-3 mb-6">
                                 <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
                                 <div>
-                                    <h4 className="text-white text-sm font-semibold">Danger Zone</h4>
-                                    <p className="text-[#7A9CC4] text-xs mt-1 leading-relaxed">
+                                    <h4 className="text-slate-900 text-sm font-semibold">Danger Zone</h4>
+                                    <p className="text-slate-500 text-xs mt-1 leading-relaxed">
                                         Clicking the button below will permanently delete all records related to this email address from our database, including the alerts above. You will stop receiving emails immediately.
                                     </p>
                                 </div>
@@ -241,8 +241,8 @@ export default function ManageDataPage() {
                                 <CheckCircle2 className="w-12 h-12" />
                             </div>
                         </div>
-                        <h2 className="text-2xl font-bold text-white">Data Deleted</h2>
-                        <p className="text-[#C8D8E8] text-sm leading-relaxed max-w-sm mx-auto">
+                        <h2 className="text-2xl font-bold text-slate-900">Data Deleted</h2>
+                        <p className="text-slate-700 text-sm leading-relaxed max-w-sm mx-auto">
                             Your email address and all associated active alerts have been permanently purged from our system in compliance with privacy regulations.
                         </p>
                         <div className="pt-6">

@@ -104,7 +104,7 @@ export default function ChatWidget() {
             return line
                 .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
                 .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-[#F0B429] underline hover:text-yellow-300" target="_blank">$1</a>')
-                .replace(/`([^`]+)`/g, '<code class="bg-[#1E3A5F] px-1 rounded text-xs">$1</code>');
+                .replace(/`([^`]+)`/g, '<code class="bg-slate-100 px-1 rounded text-xs">$1</code>');
         };
 
         for (let i = 0; i < lines.length; i++) {
@@ -129,17 +129,17 @@ export default function ChatWidget() {
                     <div key={`t-${i}`} className="overflow-x-auto my-2">
                         <table className="w-full text-xs">
                             <thead>
-                                <tr className="border-b border-[#1E3A5F]">
+                                <tr className="border-b border-slate-200">
                                     {tableHeaders.map((h, hi) => (
-                                        <th key={hi} className="text-left p-1.5 text-[#7A9CC4] font-semibold" dangerouslySetInnerHTML={{ __html: processInline(h) }} />
+                                        <th key={hi} className="text-left p-1.5 text-slate-500 font-semibold" dangerouslySetInnerHTML={{ __html: processInline(h) }} />
                                     ))}
                                 </tr>
                             </thead>
                             <tbody>
                                 {tableRows.map((row, ri) => (
-                                    <tr key={ri} className="border-b border-[#1E3A5F]/30">
+                                    <tr key={ri} className="border-b border-slate-200/30">
                                         {row.map((cell, ci) => (
-                                            <td key={ci} className="p-1.5 text-[#C8D8E8]" dangerouslySetInnerHTML={{ __html: processInline(cell) }} />
+                                            <td key={ci} className="p-1.5 text-slate-700" dangerouslySetInnerHTML={{ __html: processInline(cell) }} />
                                         ))}
                                     </tr>
                                 ))}
@@ -172,17 +172,17 @@ export default function ChatWidget() {
                 <div key="t-end" className="overflow-x-auto my-2">
                     <table className="w-full text-xs">
                         <thead>
-                            <tr className="border-b border-[#1E3A5F]">
+                            <tr className="border-b border-slate-200">
                                 {tableHeaders.map((h, hi) => (
-                                    <th key={hi} className="text-left p-1.5 text-[#7A9CC4] font-semibold" dangerouslySetInnerHTML={{ __html: processInline(h) }} />
+                                    <th key={hi} className="text-left p-1.5 text-slate-500 font-semibold" dangerouslySetInnerHTML={{ __html: processInline(h) }} />
                                 ))}
                             </tr>
                         </thead>
                         <tbody>
                             {tableRows.map((row, ri) => (
-                                <tr key={ri} className="border-b border-[#1E3A5F]/30">
+                                <tr key={ri} className="border-b border-slate-200/30">
                                     {row.map((cell, ci) => (
-                                        <td key={ci} className="p-1.5 text-[#C8D8E8]" dangerouslySetInnerHTML={{ __html: processInline(cell) }} />
+                                        <td key={ci} className="p-1.5 text-slate-700" dangerouslySetInnerHTML={{ __html: processInline(cell) }} />
                                     ))}
                                 </tr>
                             ))}
@@ -201,15 +201,15 @@ export default function ChatWidget() {
             <button
                 onClick={() => (open ? setOpen(false) : handleOpen())}
                 className={`fixed bottom-6 right-6 z-[100] w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ${open
-                        ? "bg-[#1E3A5F] hover:bg-[#2A4A6F] rotate-0"
+                        ? "bg-slate-100 hover:bg-[#2A4A6F] rotate-0"
                         : "bg-[#F0B429] hover:bg-yellow-400 hover:scale-110 glow-gold"
                     }`}
                 aria-label={open ? "Close chat" : "Open RemitIQ assistant"}
             >
                 {open ? (
-                    <X className="w-6 h-6 text-white" />
+                    <X className="w-6 h-6 text-slate-900" />
                 ) : (
-                    <MessageCircle className="w-6 h-6 text-[#0A1628]" />
+                    <MessageCircle className="w-6 h-6 text-slate-900" />
                 )}
             </button>
 
@@ -220,15 +220,15 @@ export default function ChatWidget() {
 
             {/* Chat Window */}
             {open && (
-                <div className="fixed bottom-24 right-6 z-[100] w-[380px] max-w-[calc(100vw-2rem)] h-[560px] max-h-[calc(100vh-8rem)] bg-[#0D1B2E] border border-[#1E3A5F] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in">
+                <div className="fixed bottom-24 right-6 z-[100] w-[380px] max-w-[calc(100vw-2rem)] h-[560px] max-h-[calc(100vh-8rem)] bg-white border border-slate-200 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in">
                     {/* Header */}
-                    <div className="bg-gradient-to-r from-[#111D32] to-[#0D1B2E] border-b border-[#1E3A5F] px-4 py-3 flex items-center gap-3">
+                    <div className="bg-gradient-to-r from-[#111D32] to-[#0D1B2E] border-b border-slate-200 px-4 py-3 flex items-center gap-3">
                         <div className="w-9 h-9 rounded-xl bg-[#F0B429]/15 flex items-center justify-center">
                             <Sparkles className="w-5 h-5 text-[#F0B429]" />
                         </div>
                         <div className="flex-1">
-                            <h3 className="text-white font-semibold text-sm">Ask RemitIQ</h3>
-                            <p className="text-[#7A9CC4] text-xs">AUD/INR rates & remittance help</p>
+                            <h3 className="text-slate-900 font-semibold text-sm">Ask RemitIQ</h3>
+                            <p className="text-slate-500 text-xs">AUD/INR rates & remittance help</p>
                         </div>
                         <div className="flex items-center gap-1.5">
                             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -248,8 +248,8 @@ export default function ChatWidget() {
                                 <div className={`max-w-[85%] ${msg.role === "user" ? "ml-auto" : ""}`}>
                                     <div
                                         className={`rounded-2xl px-3.5 py-2.5 ${msg.role === "user"
-                                                ? "bg-[#F0B429] text-[#0A1628] rounded-br-md"
-                                                : "bg-[#111D32] border border-[#1E3A5F] text-[#C8D8E8] rounded-bl-md"
+                                                ? "bg-[#F0B429] text-slate-900 rounded-br-md"
+                                                : "bg-slate-50 border border-slate-200 text-slate-700 rounded-bl-md"
                                             }`}
                                     >
                                         {msg.role === "user" ? (
@@ -266,7 +266,7 @@ export default function ChatWidget() {
                                                     key={si}
                                                     onClick={() => sendMessage(s)}
                                                     disabled={loading}
-                                                    className="text-xs px-2.5 py-1.5 rounded-lg bg-[#1E3A5F]/40 text-[#7A9CC4] hover:bg-[#1E3A5F] hover:text-white border border-[#1E3A5F]/50 transition-all disabled:opacity-50"
+                                                    className="text-xs px-2.5 py-1.5 rounded-lg bg-slate-100/40 text-slate-500 hover:bg-slate-100 hover:text-slate-900 border border-slate-200/50 transition-all disabled:opacity-50"
                                                 >
                                                     {s}
                                                 </button>
@@ -275,8 +275,8 @@ export default function ChatWidget() {
                                     )}
                                 </div>
                                 {msg.role === "user" && (
-                                    <div className="w-7 h-7 rounded-lg bg-[#1E3A5F] flex items-center justify-center flex-shrink-0 mt-0.5">
-                                        <User className="w-4 h-4 text-[#7A9CC4]" />
+                                    <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <User className="w-4 h-4 text-slate-500" />
                                     </div>
                                 )}
                             </div>
@@ -288,7 +288,7 @@ export default function ChatWidget() {
                                 <div className="w-7 h-7 rounded-lg bg-[#F0B429]/15 flex items-center justify-center flex-shrink-0">
                                     <Bot className="w-4 h-4 text-[#F0B429]" />
                                 </div>
-                                <div className="bg-[#111D32] border border-[#1E3A5F] rounded-2xl rounded-bl-md px-4 py-3">
+                                <div className="bg-slate-50 border border-slate-200 rounded-2xl rounded-bl-md px-4 py-3">
                                     <div className="flex gap-1.5">
                                         <div className="w-2 h-2 rounded-full bg-[#7A9CC4] animate-bounce" style={{ animationDelay: "0ms" }} />
                                         <div className="w-2 h-2 rounded-full bg-[#7A9CC4] animate-bounce" style={{ animationDelay: "150ms" }} />
@@ -301,7 +301,7 @@ export default function ChatWidget() {
                     </div>
 
                     {/* Input */}
-                    <form onSubmit={handleSubmit} className="border-t border-[#1E3A5F] px-3 py-3 bg-[#0D1B2E]">
+                    <form onSubmit={handleSubmit} className="border-t border-slate-200 px-3 py-3 bg-white">
                         <div className="flex gap-2">
                             <input
                                 ref={inputRef}
@@ -310,17 +310,17 @@ export default function ChatWidget() {
                                 onChange={(e) => setInput(e.target.value)}
                                 placeholder="Ask about AUD/INR rates..."
                                 disabled={loading}
-                                className="flex-1 bg-[#111D32] border border-[#1E3A5F] rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-[#7A9CC4]/60 focus:outline-none focus:border-[#F0B429] transition-colors disabled:opacity-50"
+                                className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder-[#7A9CC4]/60 focus:outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 transition-colors disabled:opacity-50"
                             />
                             <button
                                 type="submit"
                                 disabled={loading || !input.trim()}
-                                className="w-10 h-10 rounded-xl bg-[#F0B429] text-[#0A1628] flex items-center justify-center hover:bg-yellow-400 transition-colors disabled:opacity-50 disabled:hover:bg-[#F0B429] flex-shrink-0"
+                                className="w-10 h-10 rounded-xl bg-[#F0B429] text-slate-900 flex items-center justify-center hover:bg-yellow-400 transition-colors disabled:opacity-50 disabled:hover:bg-[#F0B429] flex-shrink-0"
                             >
                                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                             </button>
                         </div>
-                        <p className="text-[#7A9CC4]/50 text-[10px] text-center mt-2">Guidance only — not financial advice</p>
+                        <p className="text-slate-500/50 text-[10px] text-center mt-2">Guidance only — not financial advice</p>
                     </form>
                 </div>
             )}

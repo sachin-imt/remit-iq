@@ -66,20 +66,20 @@ export default function ComparePage() {
       <title>Compare Remittance Providers | Wise vs Remitly vs Western Union etc</title>
       <div className="mb-8">
         <div className="flex items-center gap-2 mb-2">
-          <h1 className="text-3xl font-extrabold text-white">Compare Remittance Providers: Best Way to Send Money to India</h1>
+          <h1 className="text-3xl font-extrabold text-slate-900">Compare Remittance Providers: Best Way to Send Money to India</h1>
           {dataSource === "live" && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">LIVE</span>}
         </div>
-        <p className="text-[#7A9CC4]">Compare live exchange rates from {ranked.length} platforms. Ranked by total INR received after all fees.</p>
-        <p className="text-[#7A9CC4] text-xs mt-1">Mid-market rate: &#8377;{midMarketRate.toFixed(2)} (ECB)</p>
+        <p className="text-slate-500">Compare live exchange rates from {ranked.length} platforms. Ranked by total INR received after all fees.</p>
+        <p className="text-slate-500 text-xs mt-1">Mid-market rate: &#8377;{midMarketRate.toFixed(2)} (ECB)</p>
       </div>
       <div className="flex flex-col md:flex-row gap-4 mb-6">
         <div className="flex-1">
-          <label className="block text-[#7A9CC4] text-sm mb-1">Send Amount (AUD)</label>
-          <input type="text" value={inputVal} onChange={(e) => handleAmountChange(e.target.value)} className="w-full bg-[#111D32] border border-[#1E3A5F] rounded-xl py-3 px-4 text-lg font-bold text-white focus:outline-none focus:border-[#F0B429]" />
+          <label className="block text-slate-500 text-sm mb-1">Send Amount (AUD)</label>
+          <input type="text" value={inputVal} onChange={(e) => handleAmountChange(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-lg font-bold text-slate-900 focus:outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20" />
         </div>
         <div className="md:w-48">
-          <label className="block text-[#7A9CC4] text-sm mb-1">Sort by</label>
-          <select aria-label="Sort comparison results" value={sortBy} onChange={(e) => setSortBy(e.target.value as SortKey)} className="w-full bg-[#111D32] border border-[#1E3A5F] rounded-xl py-3 px-4 text-white focus:outline-none focus:border-[#F0B429]">
+          <label className="block text-slate-500 text-sm mb-1">Sort by</label>
+          <select aria-label="Sort comparison results" value={sortBy} onChange={(e) => setSortBy(e.target.value as SortKey)} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-slate-900 focus:outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20">
             <option value="received">Best value (INR received)</option>
             <option value="rate">Exchange rate</option>
             <option value="fee">Lowest fee</option>
@@ -95,39 +95,39 @@ export default function ComparePage() {
       )}
       <div className="space-y-4">
         {ranked.map((p, i) => (
-          <div key={p.id} className={`bg-[#111D32] border rounded-2xl p-6 transition-all hover:border-[#F0B429]/30 ${i === 0 ? "border-emerald-500/30 bg-emerald-500/5" : "border-[#1E3A5F]"}`}>
+          <div key={p.id} className={`bg-slate-50 border rounded-2xl p-6 transition-all hover:border-[#F0B429]/30 ${i === 0 ? "border-emerald-500/30 bg-emerald-500/5" : "border-slate-200"}`}>
             <div className="flex flex-col md:flex-row md:items-center gap-4">
               <div className="flex items-center gap-4 md:w-1/4">
-                <span className="text-[#7A9CC4] text-2xl font-bold w-8 text-center">#{i + 1}</span>
+                <span className="text-slate-500 text-2xl font-bold w-8 text-center">#{i + 1}</span>
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg" style={{ backgroundColor: p.color + "20", color: p.color }}>{p.abbr}</div>
                 <div>
-                  <p className="text-white font-bold">{p.name}</p>
-                  <div className="flex items-center gap-1"><Star className="w-3 h-3 text-[#F0B429] fill-[#F0B429]" /><span className="text-[#7A9CC4] text-xs">{p.stars}/5</span>
+                  <p className="text-slate-900 font-bold">{p.name}</p>
+                  <div className="flex items-center gap-1"><Star className="w-3 h-3 text-[#F0B429] fill-[#F0B429]" /><span className="text-slate-500 text-xs">{p.stars}/5</span>
                     {p.badge && <span className="ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#F0B429]/20 text-[#F0B429]">{p.badge}</span>}</div>
                 </div>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-1">
-                <div><p className="text-[#7A9CC4] text-xs">Exchange Rate</p><p className="text-white font-semibold">&#8377;{p.rate.toFixed(2)}</p><p className="text-[#7A9CC4] text-[10px]">{p.marginPct.toFixed(2)}% margin</p></div>
-                <div><p className="text-[#7A9CC4] text-xs">Transfer Fee</p><p className={p.fee === 0 ? "text-emerald-400 font-semibold" : "text-white font-semibold"}>{p.fee === 0 ? "FREE" : `AUD $${p.fee.toFixed(2)}`}</p></div>
-                <div><p className="text-[#7A9CC4] text-xs">Delivery Speed</p><p className="text-white font-semibold">{p.speed}</p></div>
-                <div><p className="text-[#7A9CC4] text-xs">You Receive</p><p className="text-white font-bold text-xl">&#8377;{formatINR(p.received)}</p>{p.savings > 0 && <p className="text-emerald-400 text-xs font-semibold">+&#8377;{formatINR(p.savings)} vs worst</p>}</div>
+                <div><p className="text-slate-500 text-xs">Exchange Rate</p><p className="text-slate-900 font-semibold">&#8377;{p.rate.toFixed(2)}</p><p className="text-slate-500 text-[10px]">{p.marginPct.toFixed(2)}% margin</p></div>
+                <div><p className="text-slate-500 text-xs">Transfer Fee</p><p className={p.fee === 0 ? "text-emerald-400 font-semibold" : "text-slate-900 font-semibold"}>{p.fee === 0 ? "FREE" : `AUD $${p.fee.toFixed(2)}`}</p></div>
+                <div><p className="text-slate-500 text-xs">Delivery Speed</p><p className="text-slate-900 font-semibold">{p.speed}</p></div>
+                <div><p className="text-slate-500 text-xs">You Receive</p><p className="text-slate-900 font-bold text-xl">&#8377;{formatINR(p.received)}</p>{p.savings > 0 && <p className="text-emerald-400 text-xs font-semibold">+&#8377;{formatINR(p.savings)} vs worst</p>}</div>
               </div>
               <div className="md:w-32 flex md:justify-end">
                 <a href={getAffiliateUrlWithAmount(p.id, p.affiliateUrl, amount, "compare")} target="_blank" rel="noopener noreferrer sponsored"
-                  className={`inline-flex items-center gap-1.5 px-5 py-3 rounded-xl font-semibold text-sm transition-all w-full md:w-auto justify-center ${i === 0 ? "bg-[#F0B429] text-[#0A1628] hover:bg-yellow-400 glow-gold" : "bg-[#1E3A5F]/50 text-[#C8D8E8] hover:bg-[#1E3A5F]"}`}>
+                  className={`inline-flex items-center gap-1.5 px-5 py-3 rounded-xl font-semibold text-sm transition-all w-full md:w-auto justify-center ${i === 0 ? "bg-[#F0B429] text-slate-900 hover:bg-yellow-400 glow-gold" : "bg-slate-100/50 text-slate-700 hover:bg-slate-100"}`}>
                   Send Now <ArrowUpRight className="w-4 h-4" /></a>
               </div>
             </div>
-            <div className="mt-4 pt-3 border-t border-[#1E3A5F]/50 flex flex-col md:flex-row md:items-center justify-between gap-2">
-              <div className="flex flex-wrap gap-2">{p.paymentMethods.map((m) => (<span key={m} className="text-[10px] px-2 py-0.5 rounded bg-[#0D1B2E] text-[#7A9CC4] border border-[#1E3A5F]">{m}</span>))}</div>
+            <div className="mt-4 pt-3 border-t border-slate-200/50 flex flex-col md:flex-row md:items-center justify-between gap-2">
+              <div className="flex flex-wrap gap-2">{p.paymentMethods.map((m) => (<span key={m} className="text-[10px] px-2 py-0.5 rounded bg-white text-slate-500 border border-slate-200">{m}</span>))}</div>
               {p.promoText && <p className="text-[#F0B429] text-xs font-medium">{p.promoText}</p>}
             </div>
           </div>
         ))}
       </div>
-      <div className="mt-12 bg-[#0D1B2E] rounded-xl p-6">
-        <h2 className="text-white font-bold mb-3">How We Compare</h2>
-        <div className="text-[#7A9CC4] text-sm space-y-2">
+      <div className="mt-12 bg-white rounded-xl p-6">
+        <h2 className="text-slate-900 font-bold mb-3">How We Compare</h2>
+        <div className="text-slate-500 text-sm space-y-2">
           <p>RemitIQ compares the total value of your transfer &mdash; not just the exchange rate. We calculate the exact INR amount you&apos;ll receive after all fees and FX margins.</p>
           <p>Rates are derived from real-time ECB mid-market data with provider-specific margins applied. Rankings are purely by value to you &mdash; we never boost rankings based on commercial relationships.</p>
         </div>

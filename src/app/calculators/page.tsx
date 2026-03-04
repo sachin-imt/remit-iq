@@ -57,15 +57,15 @@ const calculators = [
 
 export default function CalculatorsHubPage() {
     return (
-        <div className="min-h-screen">
+        <div className="min-h-screen relative z-10">
             <section className="relative overflow-hidden pt-12 pb-8">
-                <div className="absolute inset-0 bg-gradient-to-b from-[#F0B429]/5 via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-transparent to-white/20 z-[-1]" />
                 <div className="mx-auto max-w-6xl px-4 relative">
                     <div className="text-center max-w-3xl mx-auto mb-10">
-                        <h1 className="text-3xl md:text-5xl font-extrabold text-white leading-tight mb-4">
-                            Free Financial <span className="text-[#F0B429]">Calculators</span>
+                        <h1 className="text-4xl md:text-6xl font-extrabold text-slate-900 leading-tight mb-6 tracking-tight">
+                            Free Financial <span className="text-gradient">Calculators</span>
                         </h1>
-                        <p className="text-[#7A9CC4] text-lg">
+                        <p className="text-slate-500 text-lg">
                             Professional-grade finance tools to plan loans, mortgages, investments, and more.
                             Always free, no signup required.
                         </p>
@@ -76,20 +76,20 @@ export default function CalculatorsHubPage() {
                             <Link
                                 key={calc.id}
                                 href={calc.href}
-                                className={`group relative bg-[#111D32] border border-[#1E3A5F] hover:${calc.borderColor} rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-[#000000]/50 overflow-hidden`}
+                                className={`group relative glass-panel border border-white/60 hover:${calc.borderColor} rounded-3xl p-8 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-slate-300/50 overflow-hidden`}
                             >
-                                <div className={`absolute inset-0 bg-gradient-to-br ${calc.color} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+                                <div className={`absolute inset-0 bg-gradient-to-br ${calc.color} opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-[-1]`} />
                                 <div className="relative z-10">
-                                    <div className="w-12 h-12 rounded-xl bg-[#0D1B2E] border border-[#1E3A5F] flex items-center justify-center mb-4">
+                                    <div className="w-14 h-14 rounded-2xl bg-white/80 border border-white/60 shadow-sm flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
                                         {calc.icon}
                                     </div>
-                                    <h2 className="text-xl font-bold text-white mb-2 group-hover:text-[#F0B429] transition-colors">
+                                    <h2 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-[#F0B429] transition-colors">
                                         {calc.title}
                                     </h2>
-                                    <p className="text-[#7A9CC4] text-sm leading-relaxed mb-6">
+                                    <p className="text-slate-500 text-sm leading-relaxed mb-6">
                                         {calc.description}
                                     </p>
-                                    <div className="inline-flex items-center text-sm font-semibold text-white group-hover:text-[#F0B429] transition-colors">
+                                    <div className="inline-flex items-center text-sm font-semibold text-slate-900 group-hover:text-[#F0B429] transition-colors">
                                         <span>Calculate Now</span>
                                         <ArrowUpRight className="w-4 h-4 ml-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
                                     </div>

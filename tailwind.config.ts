@@ -10,15 +10,15 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          navy: "#0A1628",
-          dark: "#0D1B2E",
-          panel: "#111D32",
-          border: "#1E3A5F",
-          accent: "#F0B429",
+          navy: "#0F172A", // Used for dark text now instead of backgrounds
+          dark: "#F1F5F9", // Used for subtle light backgrounds
+          panel: "#FFFFFF", // Used for white cards/panels
+          border: "#E2E8F0", // Light subtle borders
+          accent: "#F0B429", // Keeping gold
           gold: "#F0B429",
-          blue: "#00B9FF",
-          muted: "#7A9CC4",
-          text: "#C8D8E8",
+          blue: "#3B82F6", // Modern crisp blue
+          muted: "#64748B", // Muted slate text
+          text: "#0F172A", // Dark slate text
         },
       },
     },

@@ -72,18 +72,18 @@ export default function RetirementPlannerPage() {
     return (
         <div className="min-h-screen pb-20">
             {/* Header */}
-            <section className="relative overflow-hidden pt-10 pb-6 border-b border-[#1E3A5F] bg-[#0A1628]">
+            <section className="relative overflow-hidden pt-10 pb-6 border-b border-slate-200 bg-slate-50">
                 <div className="mx-auto max-w-6xl px-4 relative">
                     <div className="max-w-3xl">
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-10 h-10 rounded-xl bg-[#8B5CF6]/20 flex items-center justify-center">
                                 <PiggyBank className="w-5 h-5 text-[#8B5CF6]" />
                             </div>
-                            <h1 className="text-2xl md:text-3xl font-extrabold text-white">
+                            <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900">
                                 Retirement Planner
                             </h1>
                         </div>
-                        <p className="text-[#7A9CC4] text-sm md:text-base mb-6">
+                        <p className="text-slate-500 text-sm md:text-base mb-6">
                             Estimate how much you'll have saved by retirement age and see what your
                             monthly income might look like based on the safe withdrawal rule.
                         </p>
@@ -102,32 +102,32 @@ export default function RetirementPlannerPage() {
 
                     {/* Controls - Left Column */}
                     <div className="lg:col-span-4 space-y-6">
-                        <div className="bg-[#111D32] border border-[#1E3A5F] rounded-2xl p-6">
-                            <h2 className="text-white font-bold text-lg mb-6">Your Profile</h2>
+                        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6">
+                            <h2 className="text-slate-900 font-bold text-lg mb-6">Your Profile</h2>
 
                             <div className="grid grid-cols-2 gap-4 mb-6">
                                 {/* Current Age */}
                                 <div>
-                                    <label className="block text-[#7A9CC4] text-sm font-medium mb-2">Current Age</label>
+                                    <label className="block text-slate-500 text-sm font-medium mb-2">Current Age</label>
                                     <div className="relative">
                                         <input
                                             type="number"
                                             value={currentAge || ""}
                                             onChange={(e) => handleAgeChange('current', Number(e.target.value))}
-                                            className="w-full bg-[#0D1B2E] border border-[#1E3A5F] rounded-xl py-3 px-3 text-white font-semibold focus:outline-none focus:border-[#8B5CF6] transition-all text-sm"
+                                            className="w-full bg-white border border-slate-200 rounded-xl py-3 px-3 text-slate-900 font-semibold focus:outline-none focus:border-[#8B5CF6] transition-all text-sm"
                                         />
                                     </div>
                                 </div>
 
                                 {/* Retirement Age */}
                                 <div>
-                                    <label className="block text-[#7A9CC4] text-sm font-medium mb-2">Retire Age</label>
+                                    <label className="block text-slate-500 text-sm font-medium mb-2">Retire Age</label>
                                     <div className="relative">
                                         <input
                                             type="number"
                                             value={retirementAge || ""}
                                             onChange={(e) => handleAgeChange('retire', Number(e.target.value))}
-                                            className="w-full bg-[#0D1B2E] border border-[#1E3A5F] rounded-xl py-3 px-3 text-white font-semibold focus:outline-none focus:border-[#8B5CF6] transition-all text-sm"
+                                            className="w-full bg-white border border-slate-200 rounded-xl py-3 px-3 text-slate-900 font-semibold focus:outline-none focus:border-[#8B5CF6] transition-all text-sm"
                                         />
                                     </div>
                                 </div>
@@ -136,16 +136,16 @@ export default function RetirementPlannerPage() {
                             {/* Current Savings */}
                             <div className="mb-6">
                                 <div className="flex justify-between items-center mb-2">
-                                    <label className="text-[#7A9CC4] text-sm font-medium">Current Savings</label>
-                                    <span className="text-white font-bold">${currentSavings.toLocaleString()}</span>
+                                    <label className="text-slate-500 text-sm font-medium">Current Savings</label>
+                                    <span className="text-slate-900 font-bold">${currentSavings.toLocaleString()}</span>
                                 </div>
                                 <div className="relative">
-                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7A9CC4] font-semibold">$</span>
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">$</span>
                                     <input
                                         type="number"
                                         value={currentSavings || ""}
                                         onChange={(e) => setCurrentSavings(Number(e.target.value))}
-                                        className="w-full bg-[#0D1B2E] border border-[#1E3A5F] rounded-xl py-3 px-4 pl-8 text-white font-semibold focus:outline-none focus:border-[#8B5CF6] transition-all"
+                                        className="w-full bg-white border border-slate-200 rounded-xl py-3 px-4 pl-8 text-slate-900 font-semibold focus:outline-none focus:border-[#8B5CF6] transition-all"
                                     />
                                 </div>
                                 <input
@@ -153,23 +153,23 @@ export default function RetirementPlannerPage() {
                                     min="0" max="1000000" step="5000"
                                     value={currentSavings}
                                     onChange={(e) => setCurrentSavings(Number(e.target.value))}
-                                    className="w-full h-1.5 bg-[#1E3A5F] rounded-lg appearance-none cursor-pointer mt-4 accent-[#8B5CF6]"
+                                    className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer mt-4 accent-[#8B5CF6]"
                                 />
                             </div>
 
                             {/* Monthly Contribution */}
                             <div className="mb-6">
                                 <div className="flex justify-between items-center mb-2">
-                                    <label className="text-[#7A9CC4] text-sm font-medium">Monthly Savings</label>
-                                    <span className="text-white font-bold">${monthlyContribution.toLocaleString()}</span>
+                                    <label className="text-slate-500 text-sm font-medium">Monthly Savings</label>
+                                    <span className="text-slate-900 font-bold">${monthlyContribution.toLocaleString()}</span>
                                 </div>
                                 <div className="relative">
-                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7A9CC4] font-semibold">$</span>
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">$</span>
                                     <input
                                         type="number"
                                         value={monthlyContribution || ""}
                                         onChange={(e) => setMonthlyContribution(Number(e.target.value))}
-                                        className="w-full bg-[#0D1B2E] border border-[#1E3A5F] rounded-xl py-3 px-4 pl-8 text-white font-semibold focus:outline-none focus:border-[#8B5CF6] transition-all"
+                                        className="w-full bg-white border border-slate-200 rounded-xl py-3 px-4 pl-8 text-slate-900 font-semibold focus:outline-none focus:border-[#8B5CF6] transition-all"
                                     />
                                 </div>
                                 <input
@@ -177,37 +177,37 @@ export default function RetirementPlannerPage() {
                                     min="0" max="10000" step="100"
                                     value={monthlyContribution}
                                     onChange={(e) => setMonthlyContribution(Number(e.target.value))}
-                                    className="w-full h-1.5 bg-[#1E3A5F] rounded-lg appearance-none cursor-pointer mt-4 accent-[#8B5CF6]"
+                                    className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer mt-4 accent-[#8B5CF6]"
                                 />
                             </div>
 
-                            <div className="pt-6 border-t border-[#1E3A5F]">
-                                <h3 className="text-white font-bold text-md mb-4">Assumptions</h3>
+                            <div className="pt-6 border-t border-slate-200">
+                                <h3 className="text-slate-900 font-bold text-md mb-4">Assumptions</h3>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-[#7A9CC4] text-xs font-medium mb-2">Est. Return (%)</label>
+                                        <label className="block text-slate-500 text-xs font-medium mb-2">Est. Return (%)</label>
                                         <div className="relative">
                                             <input
                                                 type="number"
                                                 value={rate || ""}
                                                 onChange={(e) => setRate(Number(e.target.value))}
                                                 step="0.1"
-                                                className="w-full bg-[#0D1B2E] border border-[#1E3A5F] rounded-xl py-2 px-3 pr-7 text-white font-semibold focus:outline-none focus:border-[#8B5CF6] transition-all text-sm"
+                                                className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 pr-7 text-slate-900 font-semibold focus:outline-none focus:border-[#8B5CF6] transition-all text-sm"
                                             />
-                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7A9CC4] font-semibold text-sm">%</span>
+                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 font-semibold text-sm">%</span>
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-[#7A9CC4] text-xs font-medium mb-2">Withdrawal Rule</label>
+                                        <label className="block text-slate-500 text-xs font-medium mb-2">Withdrawal Rule</label>
                                         <div className="relative">
                                             <input
                                                 type="number"
                                                 value={withdrawalRate || ""}
                                                 onChange={(e) => setWithdrawalRate(Number(e.target.value))}
                                                 step="0.1"
-                                                className="w-full bg-[#0D1B2E] border border-[#1E3A5F] rounded-xl py-2 px-3 pr-7 text-white font-semibold focus:outline-none focus:border-[#8B5CF6] transition-all text-sm"
+                                                className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 pr-7 text-slate-900 font-semibold focus:outline-none focus:border-[#8B5CF6] transition-all text-sm"
                                             />
-                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7A9CC4] font-semibold text-sm">%</span>
+                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 font-semibold text-sm">%</span>
                                         </div>
                                     </div>
                                 </div>
@@ -215,16 +215,16 @@ export default function RetirementPlannerPage() {
                         </div>
 
                         {/* Cross-sell for RemitIQ */}
-                        <div className="bg-[#111D32] border border-[#1E3A5F] rounded-2xl p-5">
+                        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5">
                             <div className="flex flex-col items-center text-center">
                                 <div className="w-10 h-10 rounded-full bg-[#8B5CF6]/10 flex items-center justify-center mb-3">
                                     <PiggyBank className="w-5 h-5 text-[#8B5CF6]" />
                                 </div>
-                                <h3 className="text-white font-semibold text-sm mb-2">Retiring overseas?</h3>
-                                <p className="text-[#7A9CC4] text-xs leading-relaxed mb-4">
+                                <h3 className="text-slate-900 font-semibold text-sm mb-2">Retiring overseas?</h3>
+                                <p className="text-slate-500 text-xs leading-relaxed mb-4">
                                     Moving your pension or retirement nest egg across borders? Find the best exchange rates to maximize your savings.
                                 </p>
-                                <Link href="/" className="bg-transparent border-2 border-[#8B5CF6] text-[#8B5CF6] px-4 py-2 rounded-lg hover:bg-[#8B5CF6] hover:text-white text-sm font-bold w-full transition-colors">
+                                <Link href="/" className="bg-transparent border-2 border-[#8B5CF6] text-[#8B5CF6] px-4 py-2 rounded-lg hover:bg-[#8B5CF6] hover:text-slate-900 text-sm font-bold w-full transition-colors">
                                     Compare Rates Now
                                 </Link>
                             </div>
@@ -236,27 +236,27 @@ export default function RetirementPlannerPage() {
 
                         {/* Top Stat Cards */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="bg-[#111D32] border border-[#1E3A5F] rounded-2xl p-6 relative overflow-hidden group">
+                            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 relative overflow-hidden group">
                                 <div className="absolute inset-0 bg-gradient-to-br from-[#8B5CF6]/10 to-transparent opacity-100" />
                                 <div className="relative z-10 flex flex-col justify-center h-full">
-                                    <p className="text-[#7A9CC4] text-sm font-bold uppercase tracking-widest mb-2">Total Savings at Age {retirementAge}</p>
-                                    <p className="text-5xl font-extrabold text-white">
+                                    <p className="text-slate-500 text-sm font-bold uppercase tracking-widest mb-2">Total Savings at Age {retirementAge}</p>
+                                    <p className="text-5xl font-extrabold text-slate-900">
                                         ${finalBalance > 0 ? finalBalance.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : "0"}
                                     </p>
-                                    <p className="text-[#7A9CC4] text-xs mt-3">
+                                    <p className="text-slate-500 text-xs mt-3">
                                         Your estimated nest egg when you retire.
                                     </p>
                                 </div>
                             </div>
 
-                            <div className="bg-[#111D32] border border-[#1E3A5F] rounded-2xl p-6 relative overflow-hidden group">
+                            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 relative overflow-hidden group">
                                 <div className="absolute inset-0 bg-gradient-to-br from-[#10B981]/5 to-transparent opacity-100" />
                                 <div className="relative z-10 flex flex-col justify-center h-full">
-                                    <p className="text-[#7A9CC4] text-sm font-bold uppercase tracking-widest mb-2">Est. Monthly Income</p>
+                                    <p className="text-slate-500 text-sm font-bold uppercase tracking-widest mb-2">Est. Monthly Income</p>
                                     <p className="text-4xl font-extrabold text-emerald-400">
                                         ${monthlyIncome > 0 ? monthlyIncome.toLocaleString(undefined, { maximumFractionDigits: 0 }) : "0"} / mo
                                     </p>
-                                    <p className="text-[#7A9CC4] text-xs mt-3">
+                                    <p className="text-slate-500 text-xs mt-3">
                                         Based on withdrawing {withdrawalRate}% of your portfolio per year.
                                     </p>
                                 </div>
@@ -264,11 +264,11 @@ export default function RetirementPlannerPage() {
                         </div>
 
                         {/* Trajectory Chart */}
-                        <div className="bg-[#111D32] border border-[#1E3A5F] rounded-2xl p-6">
+                        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6">
                             <div className="flex items-center justify-between mb-6">
                                 <div>
-                                    <h2 className="text-white font-bold text-lg">Retirement Trajectory</h2>
-                                    <p className="text-[#7A9CC4] text-sm">See how your savings build over {retirementAge - currentAge} years</p>
+                                    <h2 className="text-slate-900 font-bold text-lg">Retirement Trajectory</h2>
+                                    <p className="text-slate-500 text-sm">See how your savings build over {retirementAge - currentAge} years</p>
                                 </div>
                             </div>
 
@@ -297,9 +297,9 @@ export default function RetirementPlannerPage() {
                                                 tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
                                             />
                                             <Tooltip
-                                                contentStyle={{ background: "#0D1B2E", border: "1px solid #1E3A5F", borderRadius: '8px' }}
+                                                contentStyle={{ background: "#0D1B2E", border: '1px solid #E2E8F0', borderRadius: '8px' }}
                                                 itemStyle={{ color: "#fff", fontWeight: 600 }}
-                                                labelStyle={{ color: "#7A9CC4", marginBottom: '8px' }}
+                                                labelStyle={{ color: '#64748B', marginBottom: '8px' }}
                                                 formatter={(value: number, name: string) => {
                                                     const valStr = `$${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
                                                     return name === 'balance' ? [valStr, 'Total Balance'] : [valStr, 'Your Contributions'];
@@ -310,7 +310,7 @@ export default function RetirementPlannerPage() {
                                         </AreaChart>
                                     </ResponsiveContainer>
                                 ) : (
-                                    <div className="w-full h-full flex flex-col items-center justify-center text-[#7A9CC4]">
+                                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-500">
                                         <PiggyBank className="w-10 h-10 mb-3 opacity-20" />
                                         <p>Enter details to see trajectory</p>
                                     </div>
@@ -322,8 +322,8 @@ export default function RetirementPlannerPage() {
                         <div className="bg-[#8B5CF6]/5 border border-[#8B5CF6]/20 rounded-2xl p-5 flex items-start gap-4">
                             <div className="mt-1"><Info className="w-5 h-5 text-[#8B5CF6]" /></div>
                             <div>
-                                <h4 className="text-white font-semibold text-sm mb-1">The 4% Rule</h4>
-                                <p className="text-[#7A9CC4] text-sm leading-relaxed">
+                                <h4 className="text-slate-900 font-semibold text-sm mb-1">The 4% Rule</h4>
+                                <p className="text-slate-500 text-sm leading-relaxed">
                                     Financial planners often use the "4% rule" as a rule of thumb for retirement.
                                     It suggests you can safely withdraw 4% of your total retirement portfolio in the first year,
                                     and adjust for inflation in subsequent years, without running out of money over a 30-year span.

@@ -27,7 +27,7 @@ const FROM_EMAIL_PRIVACY = "RemitIQ Privacy <privacy@remitiq.co>";
 const PHYSICAL_ADDRESS = "RemitIQ · Sydney, NSW, Australia";
 
 const EMAIL_FOOTER = `
-    <div style="border-top:1px solid #1E3A5F;margin-top:24px;padding-top:16px;">
+    <div style="border-top:1px solid #E2E8F0;margin-top:24px;padding-top:16px;">
       <p style="color:#4A6A8A;font-size:11px;text-align:center;margin:0;">
         ${PHYSICAL_ADDRESS}<br>
         <a href="https://remitiq.co/privacy" style="color:#7A9CC4;">Privacy Policy</a>
@@ -75,25 +75,25 @@ export async function sendRateAlert(params: RateAlertParams): Promise<boolean> {
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"></head>
-<body style="margin:0;padding:0;background:#0A1628;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<body style="margin:0;padding:0;background:#F8FAFC;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
   <div style="max-width:560px;margin:0 auto;padding:32px 24px;">
     <div style="text-align:center;margin-bottom:24px;">
-      <span style="background:#F0B429;color:#0A1628;font-weight:800;padding:6px 14px;border-radius:8px;font-size:18px;">RQ</span>
+      <span style="background:#F0B429;color:#0F172A;font-weight:800;padding:6px 14px;border-radius:8px;font-size:18px;">RQ</span>
       <span style="color:white;font-size:20px;font-weight:700;margin-left:8px;">Remit<span style="color:#F0B429;">IQ</span></span>
     </div>
 
-    <div style="background:#111D32;border:1px solid #1E3A5F;border-radius:16px;padding:32px;text-align:center;">
+    <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:16px;padding:32px;text-align:center;">
       <div style="font-size:48px;margin-bottom:12px;">🎯</div>
       <h1 style="color:white;font-size:24px;margin:0 0 8px;">Rate Target Hit!</h1>
       <p style="color:#7A9CC4;font-size:16px;margin:0 0 24px;">AUD/INR has reached your target rate</p>
 
-      <div style="background:#0D1B2E;border-radius:12px;padding:20px;margin-bottom:20px;">
+      <div style="background:#FFFFFF;border-radius:12px;padding:20px;margin-bottom:20px;">
         <div style="color:#7A9CC4;font-size:13px;margin-bottom:4px;">Current Best Rate</div>
         <div style="color:#4ADE80;font-size:36px;font-weight:800;">₹${currentRate.toFixed(2)}</div>
         <div style="color:#7A9CC4;font-size:13px;margin-top:8px;">Your target: ₹${targetRate.toFixed(2)} · Mid-market: ₹${midMarketRate.toFixed(2)}</div>
       </div>
 
-      <a href="https://remitiq.co" style="display:inline-block;background:#F0B429;color:#0A1628;font-weight:700;padding:14px 32px;border-radius:12px;text-decoration:none;font-size:16px;">
+      <a href="https://remitiq.co" style="display:inline-block;background:#F0B429;color:#0F172A;font-weight:700;padding:14px 32px;border-radius:12px;text-decoration:none;font-size:16px;">
         Compare Platforms Now →
       </a>
     </div>
@@ -147,25 +147,25 @@ export async function sendBestDealAlert(params: BestDealAlertParams): Promise<bo
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"></head>
-<body style="margin:0;padding:0;background:#0A1628;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<body style="margin:0;padding:0;background:#F8FAFC;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
   <div style="max-width:560px;margin:0 auto;padding:32px 24px;">
     <div style="text-align:center;margin-bottom:24px;">
-      <span style="background:#F0B429;color:#0A1628;font-weight:800;padding:6px 14px;border-radius:8px;font-size:18px;">RQ</span>
+      <span style="background:#F0B429;color:#0F172A;font-weight:800;padding:6px 14px;border-radius:8px;font-size:18px;">RQ</span>
       <span style="color:white;font-size:20px;font-weight:700;margin-left:8px;">Remit<span style="color:#F0B429;">IQ</span></span>
     </div>
 
-    <div style="background:#111D32;border:1px solid #1E3A5F;border-radius:16px;padding:32px;text-align:center;">
+    <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:16px;padding:32px;text-align:center;">
       <div style="font-size:48px;margin-bottom:12px;">💰</div>
       <h1 style="color:white;font-size:24px;margin:0 0 8px;">Great Deal Alert!</h1>
       <p style="color:#7A9CC4;font-size:16px;margin:0 0 24px;">${bestPlatform} is offering an excellent rate right now</p>
 
-      <div style="background:#0D1B2E;border-radius:12px;padding:20px;margin-bottom:20px;">
+      <div style="background:#FFFFFF;border-radius:12px;padding:20px;margin-bottom:20px;">
         <div style="color:#7A9CC4;font-size:13px;margin-bottom:4px;">${bestPlatform} Rate</div>
         <div style="color:#4ADE80;font-size:36px;font-weight:800;">₹${bestRate.toFixed(2)}</div>
         <div style="color:#7A9CC4;font-size:13px;margin-top:8px;">Mid-market: ₹${midMarketRate.toFixed(2)} · Save ${savings}</div>
       </div>
 
-      <a href="https://remitiq.co" style="display:inline-block;background:#F0B429;color:#0A1628;font-weight:700;padding:14px 32px;border-radius:12px;text-decoration:none;font-size:16px;">
+      <a href="https://remitiq.co" style="display:inline-block;background:#F0B429;color:#0F172A;font-weight:700;padding:14px 32px;border-radius:12px;text-decoration:none;font-size:16px;">
         Send Money Now →
       </a>
     </div>
@@ -215,19 +215,19 @@ export async function sendVerificationEmail(params: { to: string; code: string }
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"></head>
-<body style="margin:0;padding:0;background:#0A1628;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<body style="margin:0;padding:0;background:#F8FAFC;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
   <div style="max-width:560px;margin:0 auto;padding:32px 24px;">
     <div style="text-align:center;margin-bottom:24px;">
-      <span style="background:#F0B429;color:#0A1628;font-weight:800;padding:6px 14px;border-radius:8px;font-size:18px;">RQ</span>
+      <span style="background:#F0B429;color:#0F172A;font-weight:800;padding:6px 14px;border-radius:8px;font-size:18px;">RQ</span>
       <span style="color:white;font-size:20px;font-weight:700;margin-left:8px;">Remit<span style="color:#F0B429;">IQ</span></span>
     </div>
 
-    <div style="background:#111D32;border:1px solid #1E3A5F;border-radius:16px;padding:32px;text-align:center;">
+    <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:16px;padding:32px;text-align:center;">
       <div style="font-size:48px;margin-bottom:12px;">&#128274;</div>
       <h1 style="color:white;font-size:24px;margin:0 0 8px;">Verification Code</h1>
       <p style="color:#7A9CC4;font-size:16px;margin:0 0 24px;">Use this code to manage your data on RemitIQ</p>
 
-      <div style="background:#0D1B2E;border-radius:12px;padding:20px;margin-bottom:20px;">
+      <div style="background:#FFFFFF;border-radius:12px;padding:20px;margin-bottom:20px;">
         <div style="color:#7A9CC4;font-size:13px;margin-bottom:8px;">Your Code</div>
         <div style="color:#F0B429;font-size:40px;font-weight:800;letter-spacing:8px;font-family:monospace;">${code}</div>
         <div style="color:#7A9CC4;font-size:13px;margin-top:12px;">Expires in 10 minutes</div>

@@ -131,7 +131,7 @@ export default function DataManagementForm() {
 
             {step === "email" && (
                 <div className="space-y-4">
-                    <p className="text-sm" style={{ color: "#7A9CC4" }}>
+                    <p className="text-sm" style={{ color: '#64748B' }}>
                         Enter the email address you used to create rate alerts. We will send a verification code to confirm your identity.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-3">
@@ -141,7 +141,7 @@ export default function DataManagementForm() {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             className="flex-1 px-4 py-3 rounded-lg text-sm outline-none"
-                            style={{ backgroundColor: "#0D1B2E", border: "1px solid #1E3A5F", color: "#C8D8E8" }}
+                            style={{ backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', color: '#334155' }}
                         />
                         <button
                             onClick={handleRequestCode}
@@ -157,8 +157,8 @@ export default function DataManagementForm() {
 
             {step === "code" && (
                 <div className="space-y-4">
-                    <p className="text-sm" style={{ color: "#7A9CC4" }}>
-                        Enter the 6-digit code we sent to <strong style={{ color: "#C8D8E8" }}>{email}</strong>. The code expires in 10 minutes.
+                    <p className="text-sm" style={{ color: '#64748B' }}>
+                        Enter the 6-digit code we sent to <strong style={{ color: '#334155' }}>{email}</strong>. The code expires in 10 minutes.
                     </p>
                     <input
                         type="text"
@@ -167,7 +167,7 @@ export default function DataManagementForm() {
                         onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                         maxLength={6}
                         className="w-40 px-4 py-3 rounded-lg text-sm text-center tracking-widest font-mono outline-none"
-                        style={{ backgroundColor: "#0D1B2E", border: "1px solid #1E3A5F", color: "#C8D8E8", fontSize: "18px" }}
+                        style={{ backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', color: '#334155', fontSize: "18px" }}
                     />
                     <div className="flex flex-col sm:flex-row gap-3 pt-2">
                         <button
@@ -187,7 +187,7 @@ export default function DataManagementForm() {
                             {loading ? "Processing..." : "Delete My Data"}
                         </button>
                     </div>
-                    <button onClick={handleReset} className="text-xs underline" style={{ color: "#7A9CC4" }}>
+                    <button onClick={handleReset} className="text-xs underline" style={{ color: '#64748B' }}>
                         Use a different email
                     </button>
                 </div>
@@ -196,16 +196,16 @@ export default function DataManagementForm() {
             {step === "done" && (
                 <div className="space-y-4">
                     {exportData && (
-                        <div className="rounded-lg p-4 overflow-auto max-h-64" style={{ backgroundColor: "#0D1B2E", border: "1px solid #1E3A5F" }}>
-                            <pre className="text-xs" style={{ color: "#C8D8E8" }}>
+                        <div className="rounded-lg p-4 overflow-auto max-h-64" style={{ backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0' }}>
+                            <pre className="text-xs" style={{ color: '#334155' }}>
                                 {JSON.stringify(exportData, null, 2)}
                             </pre>
                         </div>
                     )}
                     <button
                         onClick={handleReset}
-                        className="px-6 py-3 rounded-lg text-sm font-medium border transition-colors hover:text-white"
-                        style={{ borderColor: "#1E3A5F", color: "#7A9CC4" }}
+                        className="px-6 py-3 rounded-lg text-sm font-medium border transition-colors hover:text-slate-900"
+                        style={{ borderColor: '#E2E8F0', color: '#64748B' }}
                     >
                         Start Over
                     </button>
