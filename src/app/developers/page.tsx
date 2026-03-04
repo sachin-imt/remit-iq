@@ -22,7 +22,7 @@ export default function DevelopersPage() {
                         <a href="mailto:api@remitiq.co?subject=API Access Request" className="w-full sm:w-auto bg-[#F0B429] hover:bg-yellow-400 text-slate-900 font-bold py-3 px-8 rounded-xl transition-all shadow-lg glow-gold">
                             Request API Key
                         </a>
-                        <Link href="/blog" className="w-full sm:w-auto bg-transparent border-2 border-slate-200 hover:border-[#7A9CC4] text-slate-900 font-bold py-3 px-8 rounded-xl transition-all">
+                        <Link href="/blog" className="w-full sm:w-auto bg-transparent border-2 border-slate-200 hover:border-slate-300 text-slate-900 font-bold py-3 px-8 rounded-xl transition-all">
                             Read the Docs
                         </Link>
                     </div>

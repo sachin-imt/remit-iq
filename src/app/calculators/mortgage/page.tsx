@@ -246,8 +246,8 @@ export default function MortgageCalculatorPage() {
                                                     </Pie>
                                                     <Tooltip
                                                         formatter={(value: number) => `$${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
-                                                        contentStyle={{ background: "#0D1B2E", border: '1px solid #E2E8F0', borderRadius: '8px', fontSize: '12px' }}
-                                                        itemStyle={{ color: "#fff" }}
+                                                        contentStyle={{ background: "#FFFFFF", boxShadow: "0 4px 20px rgba(0,0,0,0.08)", border: '1px solid #E2E8F0', borderRadius: '8px', fontSize: '12px' }}
+                                                        itemStyle={{ color: "#0F172A" }}
                                                     />
                                                 </PieChart>
                                             </ResponsiveContainer>
@@ -289,11 +289,11 @@ export default function MortgageCalculatorPage() {
                                                         <stop offset="95%" stopColor="#F0B429" stopOpacity={0.05} />
                                                     </linearGradient>
                                                 </defs>
-                                                <XAxis dataKey="year" tick={{ fill: "#7A9CC4", fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={(v) => `Year ${v}`} />
-                                                <YAxis tick={{ fill: "#7A9CC4", fontSize: 12 }} axisLine={false} tickLine={false} width={60} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+                                                <XAxis dataKey="year" tick={{ fill: "#64748B", fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={(v) => `Year ${v}`} />
+                                                <YAxis tick={{ fill: "#64748B", fontSize: 12 }} axisLine={false} tickLine={false} width={60} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
                                                 <Tooltip
-                                                    contentStyle={{ background: "#0D1B2E", border: '1px solid #E2E8F0', borderRadius: '8px' }}
-                                                    itemStyle={{ color: "#fff" }} labelStyle={{ color: '#64748B', marginBottom: '4px' }}
+                                                    contentStyle={{ background: "#FFFFFF", boxShadow: "0 4px 20px rgba(0,0,0,0.08)", border: '1px solid #E2E8F0', borderRadius: '8px' }}
+                                                    itemStyle={{ color: "#0F172A" }} labelStyle={{ color: '#64748B', marginBottom: '4px' }}
                                                     formatter={(value: number) => [`$${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`, 'Balance']}
                                                     labelFormatter={(label) => `Remaining Balance (Year ${label})`}
                                                 />

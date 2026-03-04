@@ -124,7 +124,7 @@ export default function BlogPage() {
 
         {/* Minimalist CTA */}
         <section className="mt-16 pt-16 border-t border-slate-200/30">
-          <div className="bg-gradient-to-br from-[#111D32] to-[#0D1B2E] border border-slate-200 rounded-3xl p-8 md:p-12 text-center relative overflow-hidden shadow-2xl">
+          <div className="bg-gradient-to-br from-white/80 to-slate-50 border border-slate-200 rounded-3xl p-8 md:p-12 text-center relative overflow-hidden shadow-2xl">
             <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[#F0B429]/5 rounded-full blur-[80px] pointer-events-none -z-10 translate-x-1/3 -translate-y-1/3"></div>
 
             <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-4">

@@ -147,7 +147,7 @@ export default function DataManagementForm() {
                             onClick={handleRequestCode}
                             disabled={loading}
                             className="px-6 py-3 rounded-lg text-sm font-semibold transition-colors hover:bg-yellow-400 disabled:opacity-50"
-                            style={{ backgroundColor: "#F0B429", color: "#0A1628" }}
+                            style={{ backgroundColor: "#F0B429", color: "#0f172a" }}
                         >
                             {loading ? "Sending..." : "Send Verification Code"}
                         </button>
@@ -174,7 +174,7 @@ export default function DataManagementForm() {
                             onClick={handleExport}
                             disabled={loading || code.length !== 6}
                             className="px-6 py-3 rounded-lg text-sm font-semibold transition-colors hover:bg-yellow-400 disabled:opacity-50"
-                            style={{ backgroundColor: "#F0B429", color: "#0A1628" }}
+                            style={{ backgroundColor: "#F0B429", color: "#0f172a" }}
                         >
                             {loading ? "Processing..." : "Export My Data"}
                         </button>

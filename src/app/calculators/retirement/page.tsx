@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { PiggyBank, ArrowRight, Info, CheckCircle2 } from "lucide-react";
+import { PiggyBank, ArrowRight, Info, CheckCircle2, TrendingUp, AlertTriangle } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import Link from "next/link";
+import CalculatorLayout from "@/components/calculators/CalculatorLayout";
 
 export default function RetirementPlannerPage() {
     const [currentAge, setCurrentAge] = useState(30);
@@ -12,6 +13,8 @@ export default function RetirementPlannerPage() {
     const [monthlyContribution, setMonthlyContribution] = useState(800);
     const [rate, setRate] = useState(7);
     const [withdrawalRate, setWithdrawalRate] = useState(4); // 4% rule
+    const [lifeExpectancy, setLifeExpectancy] = useState(85);
+    const [inflationRate, setInflationRate] = useState(2.5);
 
     const calculateRetirement = useMemo(() => {
         const years = retirementAge - currentAge;
@@ -183,7 +186,7 @@ export default function RetirementPlannerPage() {
 
                             <div className="pt-6 border-t border-slate-200">
                                 <h3 className="text-slate-900 font-bold text-md mb-4">Assumptions</h3>
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-2 gap-4 mb-4">
                                     <div>
                                         <label className="block text-slate-500 text-xs font-medium mb-2">Est. Return (%)</label>
                                         <div className="relative">
@@ -204,6 +207,35 @@ export default function RetirementPlannerPage() {
                                                 type="number"
                                                 value={withdrawalRate || ""}
                                                 onChange={(e) => setWithdrawalRate(Number(e.target.value))}
+                                                step="0.1"
+                                                className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 pr-7 text-slate-900 font-semibold focus:outline-none focus:border-[#8B5CF6] transition-all text-sm"
+                                            />
+                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 font-semibold text-sm">%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-slate-500 text-xs font-medium mb-2">Life Expectancy</label>
+                                        <div className="relative">
+                                            <input
+                                                type="number"
+                                                value={lifeExpectancy || ""}
+                                                onChange={(e) => setLifeExpectancy(Math.min(100, Math.max(65, Number(e.target.value))))}
+                                                min={65}
+                                                max={100}
+                                                step={1}
+                                                className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-slate-900 font-semibold focus:outline-none focus:border-[#8B5CF6] transition-all text-sm"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-slate-500 text-xs font-medium mb-2">Inflation (%)</label>
+                                        <div className="relative">
+                                            <input
+                                                type="number"
+                                                value={inflationRate || ""}
+                                                onChange={(e) => setInflationRate(Number(e.target.value))}
                                                 step="0.1"
                                                 className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 pr-7 text-slate-900 font-semibold focus:outline-none focus:border-[#8B5CF6] transition-all text-sm"
                                             />
@@ -284,21 +316,21 @@ export default function RetirementPlannerPage() {
                                             </defs>
                                             <XAxis
                                                 dataKey="age"
-                                                tick={{ fill: "#7A9CC4", fontSize: 12 }}
+                                                tick={{ fill: "#64748B", fontSize: 12 }}
                                                 axisLine={false}
                                                 tickLine={false}
                                                 tickFormatter={(v) => `Age ${v}`}
                                             />
                                             <YAxis
-                                                tick={{ fill: "#7A9CC4", fontSize: 12 }}
+                                                tick={{ fill: "#64748B", fontSize: 12 }}
                                                 axisLine={false}
                                                 tickLine={false}
                                                 width={65}
                                                 tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
                                             />
                                             <Tooltip
-                                                contentStyle={{ background: "#0D1B2E", border: '1px solid #E2E8F0', borderRadius: '8px' }}
-                                                itemStyle={{ color: "#fff", fontWeight: 600 }}
+                                                contentStyle={{ background: "#FFFFFF", boxShadow: "0 4px 20px rgba(0,0,0,0.08)", border: '1px solid #E2E8F0', borderRadius: '8px' }}
+                                                itemStyle={{ color: "#0F172A", fontWeight: 600 }}
                                                 labelStyle={{ color: '#64748B', marginBottom: '8px' }}
                                                 formatter={(value: number, name: string) => {
                                                     const valStr = `$${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;

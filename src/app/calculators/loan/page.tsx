@@ -4,6 +4,8 @@ import { useState, useMemo } from "react";
 import { Calculator, ArrowRight, Info, CheckCircle2 } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import Link from "next/link";
+import DataTable from "@/components/calculators/DataTable";
+import CalculatorLayout from "@/components/calculators/CalculatorLayout";
 
 export default function LoanCalculatorPage() {
     const [amount, setAmount] = useState(25000);
@@ -16,7 +18,7 @@ export default function LoanCalculatorPage() {
         const n = years * 12;
 
         if (p <= 0 || r <= 0 || n <= 0) {
-            return { monthlyPayment: 0, totalInterest: 0, totalPayment: 0, amortization: [] };
+            return { monthlyPayment: 0, totalInterest: 0, totalPayment: 0, amortization: [], fullAmortization: [] };
         }
 
         const monthlyPayment = (p * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
@@ -25,6 +27,7 @@ export default function LoanCalculatorPage() {
 
         let balance = p;
         const amortization = [];
+        const fullAmortization: { month: number; payment: number; principal: number; interest: number; balance: number }[] = [];
         let cumulativeInterest = 0;
 
         for (let month = 1; month <= n; month++) {
@@ -32,6 +35,15 @@ export default function LoanCalculatorPage() {
             const principalPayment = monthlyPayment - interestPayment;
             balance -= principalPayment;
             cumulativeInterest += interestPayment;
+
+            // Every month row for the data table
+            fullAmortization.push({
+                month,
+                payment: monthlyPayment,
+                principal: principalPayment,
+                interest: interestPayment,
+                balance: Math.max(0, balance),
+            });
 
             // Only save data points for every year or the very last month to keep chart clean
             if (month % 12 === 0 || month === n) {
@@ -48,10 +60,11 @@ export default function LoanCalculatorPage() {
             totalInterest,
             totalPayment: p + totalInterest,
             amortization,
+            fullAmortization,
         };
     }, [amount, rate, years]);
 
-    const { monthlyPayment, totalInterest, totalPayment, amortization } = calculateLoan;
+    const { monthlyPayment, totalInterest, totalPayment, amortization, fullAmortization } = calculateLoan;
 
     const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = Number(e.target.value);
@@ -236,21 +249,21 @@ export default function LoanCalculatorPage() {
                                             </defs>
                                             <XAxis
                                                 dataKey="year"
-                                                tick={{ fill: "#7A9CC4", fontSize: 12 }}
+                                                tick={{ fill: "#64748B", fontSize: 12 }}
                                                 axisLine={false}
                                                 tickLine={false}
                                                 tickFormatter={(v) => `Year ${v}`}
                                             />
                                             <YAxis
-                                                tick={{ fill: "#7A9CC4", fontSize: 12 }}
+                                                tick={{ fill: "#64748B", fontSize: 12 }}
                                                 axisLine={false}
                                                 tickLine={false}
                                                 width={60}
                                                 tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
                                             />
                                             <Tooltip
-                                                contentStyle={{ background: "#0D1B2E", border: '1px solid #E2E8F0', borderRadius: '8px' }}
-                                                itemStyle={{ color: "#fff" }}
+                                                contentStyle={{ background: "#FFFFFF", boxShadow: "0 4px 20px rgba(0,0,0,0.08)", border: '1px solid #E2E8F0', borderRadius: '8px' }}
+                                                itemStyle={{ color: "#0F172A" }}
                                                 labelStyle={{ color: '#64748B', marginBottom: '4px' }}
                                                 formatter={(value: number) => [`$${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`, '']}
                                                 labelFormatter={(label) => `Year ${label}`}
@@ -290,6 +303,20 @@ export default function LoanCalculatorPage() {
                                 </p>
                             </div>
                         </div>
+
+                        {/* Monthly Amortization Table */}
+                        <DataTable
+                            title="Monthly Amortization Schedule"
+                            defaultCollapsed={true}
+                            columns={[
+                                { key: "month", label: "Month", format: (v: number) => v.toString() },
+                                { key: "payment", label: "Payment" },
+                                { key: "principal", label: "Principal" },
+                                { key: "interest", label: "Interest" },
+                                { key: "balance", label: "Balance" },
+                            ]}
+                            data={fullAmortization}
+                        />
 
                     </div>
                 </div>

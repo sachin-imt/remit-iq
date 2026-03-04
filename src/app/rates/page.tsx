@@ -155,9 +155,9 @@ export default function RatesPage() {
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData} margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
               <defs><linearGradient id="rg2" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#F0B429" stopOpacity={0.3} /><stop offset="95%" stopColor="#F0B429" stopOpacity={0} /></linearGradient></defs>
-              <XAxis dataKey="day" tick={{ fill: "#7A9CC4", fontSize: 11 }} axisLine={false} tickLine={false} interval={3} />
-              <YAxis domain={[stats.low30d - 0.3, stats.high30d + 0.3]} tick={{ fill: "#7A9CC4", fontSize: 11 }} axisLine={false} tickLine={false} width={50} tickFormatter={(v: number) => `₹${v.toFixed(1)}`} />
-              <Tooltip contentStyle={{ background: "#0D1B2E", border: '1px solid #E2E8F0', borderRadius: 8 }} labelStyle={{ color: '#64748B' }} formatter={(value: number) => [`₹${value}`, "Rate"]} />
+              <XAxis dataKey="day" tick={{ fill: "#64748B", fontSize: 11 }} axisLine={false} tickLine={false} interval={3} />
+              <YAxis domain={[stats.low30d - 0.3, stats.high30d + 0.3]} tick={{ fill: "#64748B", fontSize: 11 }} axisLine={false} tickLine={false} width={50} tickFormatter={(v: number) => `₹${v.toFixed(1)}`} />
+              <Tooltip contentStyle={{ background: "#FFFFFF", boxShadow: "0 4px 20px rgba(0,0,0,0.08)", border: '1px solid #E2E8F0', borderRadius: 8 }} labelStyle={{ color: '#64748B' }} formatter={(value: number) => [`₹${value}`, "Rate"]} />
               <ReferenceLine y={stats.avg30d} stroke="#7A9CC4" strokeDasharray="3 3" strokeOpacity={0.5} />
               <Area type="monotone" dataKey="rate" stroke="#F0B429" strokeWidth={2.5} fill="url(#rg2)" />
             </AreaChart>

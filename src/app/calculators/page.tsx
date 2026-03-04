@@ -1,4 +1,4 @@
-import { BarChart3, Calculator, Home, PiggyBank, Briefcase } from "lucide-react";
+import { BarChart3, Calculator, Home, PiggyBank, ArrowLeftRight } from "lucide-react";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 
@@ -48,8 +48,8 @@ const calculators = [
         id: "currency",
         title: "Currency Converter",
         description: "Convert currencies and find the cheapest way to send money internationally.",
-        icon: <Briefcase className="w-6 h-6 text-[#F43F5E]" />,
-        href: "/",
+        icon: <ArrowLeftRight className="w-6 h-6 text-[#F43F5E]" />,
+        href: "/calculators/currency-converter",
         color: "from-[#F43F5E]/20 to-transparent",
         borderColor: "border-[#F43F5E]/30",
     },

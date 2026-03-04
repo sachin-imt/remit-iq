@@ -81,7 +81,7 @@ export default function AboutPage() {
                     e.currentTarget.style.boxShadow = '0 0 24px rgba(240, 180, 41, 0.15)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = '#1E3A5F';
+                    e.currentTarget.style.borderColor = '#E2E8F0';
                     e.currentTarget.style.boxShadow = 'none';
                   }}
                 >
@@ -129,7 +129,7 @@ export default function AboutPage() {
 
               <div
                 className="h-px"
-                style={{ backgroundColor: '#1E3A5F' }}
+                style={{ backgroundColor: '#CBD5E1' }}
               />
 
               <div>
@@ -143,7 +143,7 @@ export default function AboutPage() {
 
               <div
                 className="h-px"
-                style={{ backgroundColor: '#1E3A5F' }}
+                style={{ backgroundColor: '#CBD5E1' }}
               />
 
               <div>
@@ -157,7 +157,7 @@ export default function AboutPage() {
 
               <div
                 className="h-px"
-                style={{ backgroundColor: '#1E3A5F' }}
+                style={{ backgroundColor: '#CBD5E1' }}
               />
 
               <div>

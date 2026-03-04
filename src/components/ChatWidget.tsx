@@ -222,7 +222,7 @@ export default function ChatWidget() {
             {open && (
                 <div className="fixed bottom-24 right-6 z-[100] w-[380px] max-w-[calc(100vw-2rem)] h-[560px] max-h-[calc(100vh-8rem)] bg-white border border-slate-200 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in">
                     {/* Header */}
-                    <div className="bg-gradient-to-r from-[#111D32] to-[#0D1B2E] border-b border-slate-200 px-4 py-3 flex items-center gap-3">
+                    <div className="bg-gradient-to-r from-white to-slate-50 border-b border-slate-200 px-4 py-3 flex items-center gap-3">
                         <div className="w-9 h-9 rounded-xl bg-[#F0B429]/15 flex items-center justify-center">
                             <Sparkles className="w-5 h-5 text-[#F0B429]" />
                         </div>
@@ -290,9 +290,9 @@ export default function ChatWidget() {
                                 </div>
                                 <div className="bg-slate-50 border border-slate-200 rounded-2xl rounded-bl-md px-4 py-3">
                                     <div className="flex gap-1.5">
-                                        <div className="w-2 h-2 rounded-full bg-[#7A9CC4] animate-bounce" style={{ animationDelay: "0ms" }} />
-                                        <div className="w-2 h-2 rounded-full bg-[#7A9CC4] animate-bounce" style={{ animationDelay: "150ms" }} />
-                                        <div className="w-2 h-2 rounded-full bg-[#7A9CC4] animate-bounce" style={{ animationDelay: "300ms" }} />
+                                        <div className="w-2 h-2 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: "0ms" }} />
+                                        <div className="w-2 h-2 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: "150ms" }} />
+                                        <div className="w-2 h-2 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: "300ms" }} />
                                     </div>
                                 </div>
                             </div>
@@ -310,7 +310,7 @@ export default function ChatWidget() {
                                 onChange={(e) => setInput(e.target.value)}
                                 placeholder="Ask about AUD/INR rates..."
                                 disabled={loading}
-                                className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder-[#7A9CC4]/60 focus:outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 transition-colors disabled:opacity-50"
+                                className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 transition-colors disabled:opacity-50"
                             />
                             <button
                                 type="submit"
@@ -336,7 +336,7 @@ export default function ChatWidget() {
         }
         .scrollbar-thin::-webkit-scrollbar { width: 4px; }
         .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
-        .scrollbar-thin::-webkit-scrollbar-thumb { background: #1E3A5F; border-radius: 4px; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: #94A3B8; border-radius: 4px; }
       `}</style>
         </>
     );

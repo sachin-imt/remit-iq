@@ -195,8 +195,8 @@ export default function AnalyticsDashboardClient({ data, adminKey }: { data: Ana
                                         </linearGradient>
                                     </defs>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#1E3A5F" />
-                                    <XAxis dataKey="date" tick={{ fill: "#7A9CC4", fontSize: 11 }} axisLine={{ stroke: "#1E3A5F" }} />
-                                    <YAxis tick={{ fill: "#7A9CC4", fontSize: 11 }} axisLine={{ stroke: "#1E3A5F" }} />
+                                    <XAxis dataKey="date" tick={{ fill: "#64748B", fontSize: 11 }} axisLine={{ stroke: "#1E3A5F" }} />
+                                    <YAxis tick={{ fill: "#64748B", fontSize: 11 }} axisLine={{ stroke: "#1E3A5F" }} />
                                     <Tooltip content={<CustomTooltip />} />
                                     <Area type="monotone" dataKey="Signups" stroke="#F0B429" fill="url(#gradientSignups)" strokeWidth={2} />
                                     <Area type="monotone" dataKey="Unique Users" stroke="#4ADE80" fill="transparent" strokeWidth={2} strokeDasharray="4 4" />
@@ -222,8 +222,8 @@ export default function AnalyticsDashboardClient({ data, adminKey }: { data: Ana
                             <ResponsiveContainer width="100%" height={260}>
                                 <BarChart data={pvChartData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#1E3A5F" />
-                                    <XAxis dataKey="date" tick={{ fill: "#7A9CC4", fontSize: 11 }} axisLine={{ stroke: "#1E3A5F" }} />
-                                    <YAxis tick={{ fill: "#7A9CC4", fontSize: 11 }} axisLine={{ stroke: "#1E3A5F" }} />
+                                    <XAxis dataKey="date" tick={{ fill: "#64748B", fontSize: 11 }} axisLine={{ stroke: "#1E3A5F" }} />
+                                    <YAxis tick={{ fill: "#64748B", fontSize: 11 }} axisLine={{ stroke: "#1E3A5F" }} />
                                     <Tooltip content={<CustomTooltip />} />
                                     <Bar dataKey="Views" fill="#818CF8" radius={[6, 6, 0, 0]} />
                                 </BarChart>
