@@ -4,7 +4,7 @@
  */
 
 import { NextResponse } from "next/server";
-import { insertAlert, getAlertCount } from "@/lib/db";
+import { insertAlert, getAlertCount, logAnalyticsEvent } from "@/lib/db";
 
 export async function POST(request: Request) {
     try {
@@ -30,6 +30,9 @@ export async function POST(request: Request) {
         const type = validTypes.includes(alertType) ? alertType : "both";
 
         const id = await insertAlert(email, targetRate, type);
+
+        // Track in analytics
+        await logAnalyticsEvent("alert_created", "/alerts", JSON.stringify({ email, targetRate, alertType: type }));
 
         console.log(`[Alerts] New alert #${id}: ${email} → ₹${targetRate} (${type})`);
 

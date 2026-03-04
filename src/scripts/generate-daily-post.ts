@@ -53,7 +53,7 @@ async function generateDailyPost() {
     // 3. GENERATE PROGRAMMATIC MDX 
     console.log("📝 Building MDX Template...");
 
-    const dateStr = new Date().toISOString().split('T')[0];
+    const dateStr = process.env.CUSTOM_DATE || new Date().toISOString().split('T')[0];
     const slug = `daily-insights-${dateStr}`;
 
     const mdxTemplate = `---

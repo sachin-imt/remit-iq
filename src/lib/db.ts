@@ -112,6 +112,30 @@ async function ensureTables(): Promise<void> {
 
     await sql`CREATE INDEX IF NOT EXISTS idx_verification_codes_email ON verification_codes(email, created_at)`;
 
+    await sql`
+        CREATE TABLE IF NOT EXISTS page_views (
+            id SERIAL PRIMARY KEY,
+            page_path TEXT NOT NULL,
+            view_date DATE NOT NULL DEFAULT CURRENT_DATE,
+            view_count INT NOT NULL DEFAULT 1,
+            UNIQUE(page_path, view_date)
+        )
+    `;
+
+    await sql`CREATE INDEX IF NOT EXISTS idx_page_views_date ON page_views(view_date DESC)`;
+
+    await sql`
+        CREATE TABLE IF NOT EXISTS analytics_events (
+            id SERIAL PRIMARY KEY,
+            event_type TEXT NOT NULL,
+            page_path TEXT,
+            metadata TEXT,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+    `;
+
+    await sql`CREATE INDEX IF NOT EXISTS idx_analytics_events_type ON analytics_events(event_type, created_at DESC)`;
+
     _initialized = true;
 }
 
@@ -584,4 +608,171 @@ export async function deleteAlertsByEmail(email: string): Promise<number> {
     const result = await sql`DELETE FROM alerts WHERE email = ${email}`;
     await sql`DELETE FROM verification_codes WHERE email = ${email}`;
     return result.length;
+}
+
+// ─── Page Views & Analytics Events ──────────────────────────────────────────
+
+/**
+ * Log a page view. Upserts the daily counter for the given path.
+ */
+export async function logPageView(pagePath: string): Promise<void> {
+    await ensureTables();
+    const sql = getSQL();
+    await sql`
+        INSERT INTO page_views (page_path, view_date, view_count)
+        VALUES (${pagePath}, CURRENT_DATE, 1)
+        ON CONFLICT (page_path, view_date) DO UPDATE SET
+            view_count = page_views.view_count + 1
+    `;
+}
+
+/**
+ * Log an analytics event (alert_created, chat_opened, affiliate_clicked, etc.)
+ */
+export async function logAnalyticsEvent(
+    eventType: string,
+    pagePath?: string,
+    metadata?: string
+): Promise<void> {
+    await ensureTables();
+    const sql = getSQL();
+    await sql`
+        INSERT INTO analytics_events (event_type, page_path, metadata)
+        VALUES (${eventType}, ${pagePath || null}, ${metadata || null})
+    `;
+}
+
+/**
+ * Comprehensive analytics summary for the admin dashboard.
+ */
+export async function getAnalyticsSummary(): Promise<{
+    kpis: {
+        totalAlerts: number;
+        activeAlerts: number;
+        uniqueUsers: number;
+        totalPageViews: number;
+        todayPageViews: number;
+        weekPageViews: number;
+        totalRateRecords: number;
+        totalEvents: number;
+    };
+    alertsByDay: Array<{ date: string; signups: number; unique_users: number }>;
+    pageViewsByDay: Array<{ date: string; views: number }>;
+    topPages: Array<{ page_path: string; total_views: number }>;
+    recentEvents: Array<{ event_type: string; page_path: string | null; metadata: string | null; created_at: string }>;
+    alertTypeDistribution: Array<{ alert_type: string; count: number }>;
+    systemHealth: {
+        latestRateDate: string | null;
+        intelligenceFresh: boolean;
+        totalProviders: number;
+    };
+}> {
+    await ensureTables();
+    const sql = getSQL();
+
+    // KPIs
+    const [alertStats] = await sql`
+        SELECT COUNT(*) as total, COUNT(CASE WHEN is_active THEN 1 END) as active
+        FROM alerts
+    `;
+    const [uniqueUsers] = await sql`SELECT COUNT(DISTINCT email) as count FROM alerts`;
+    const [totalPV] = await sql`SELECT COALESCE(SUM(view_count), 0) as total FROM page_views`;
+    const [todayPV] = await sql`SELECT COALESCE(SUM(view_count), 0) as total FROM page_views WHERE view_date = CURRENT_DATE`;
+    const [weekPV] = await sql`SELECT COALESCE(SUM(view_count), 0) as total FROM page_views WHERE view_date >= CURRENT_DATE - INTERVAL '7 days'`;
+    const [rateCount] = await sql`SELECT COUNT(*) as count FROM daily_rates`;
+    const [eventCount] = await sql`SELECT COUNT(*) as count FROM analytics_events`;
+
+    // Alert signups by day (last 30 days)
+    const alertsByDay = await sql`
+        SELECT DATE(created_at) as date, COUNT(*) as signups, COUNT(DISTINCT email) as unique_users
+        FROM alerts
+        WHERE created_at >= NOW() - INTERVAL '30 days'
+        GROUP BY DATE(created_at)
+        ORDER BY date ASC
+    `;
+
+    // Page views by day (last 30 days)
+    const pageViewsByDay = await sql`
+        SELECT view_date as date, SUM(view_count) as views
+        FROM page_views
+        WHERE view_date >= CURRENT_DATE - INTERVAL '30 days'
+        GROUP BY view_date
+        ORDER BY view_date ASC
+    `;
+
+    // Top pages (all time, top 10)
+    const topPages = await sql`
+        SELECT page_path, SUM(view_count) as total_views
+        FROM page_views
+        GROUP BY page_path
+        ORDER BY total_views DESC
+        LIMIT 10
+    `;
+
+    // Recent events (last 50)
+    const recentEvents = await sql`
+        SELECT event_type, page_path, metadata, created_at
+        FROM analytics_events
+        ORDER BY created_at DESC
+        LIMIT 50
+    `;
+
+    // Alert type distribution
+    const alertTypeDistribution = await sql`
+        SELECT alert_type, COUNT(*) as count
+        FROM alerts
+        GROUP BY alert_type
+    `;
+
+    // System health
+    const latestRate = await sql`SELECT date FROM daily_rates ORDER BY date DESC LIMIT 1`;
+    const intelligence = await sql`SELECT computed_at FROM intelligence_cache WHERE id = 1`;
+    const [providerCount] = await sql`SELECT COUNT(*) as count FROM provider_configs`;
+
+    let intelligenceFresh = false;
+    if (intelligence.length > 0) {
+        const computedAt = new Date(intelligence[0].computed_at as string);
+        intelligenceFresh = (Date.now() - computedAt.getTime()) < 24 * 60 * 60 * 1000;
+    }
+
+    return {
+        kpis: {
+            totalAlerts: parseInt(alertStats.total as string),
+            activeAlerts: parseInt(alertStats.active as string),
+            uniqueUsers: parseInt(uniqueUsers.count as string),
+            totalPageViews: parseInt(totalPV.total as string),
+            todayPageViews: parseInt(todayPV.total as string),
+            weekPageViews: parseInt(weekPV.total as string),
+            totalRateRecords: parseInt(rateCount.count as string),
+            totalEvents: parseInt(eventCount.count as string),
+        },
+        alertsByDay: alertsByDay.map(r => ({
+            date: (r.date as Date).toISOString().split('T')[0],
+            signups: parseInt(r.signups as string),
+            unique_users: parseInt(r.unique_users as string),
+        })),
+        pageViewsByDay: pageViewsByDay.map(r => ({
+            date: (r.date as Date).toISOString().split('T')[0],
+            views: parseInt(r.views as string),
+        })),
+        topPages: topPages.map(r => ({
+            page_path: r.page_path as string,
+            total_views: parseInt(r.total_views as string),
+        })),
+        recentEvents: recentEvents.map(r => ({
+            event_type: r.event_type as string,
+            page_path: r.page_path as string | null,
+            metadata: r.metadata as string | null,
+            created_at: (r.created_at as Date).toISOString(),
+        })),
+        alertTypeDistribution: alertTypeDistribution.map(r => ({
+            alert_type: r.alert_type as string,
+            count: parseInt(r.count as string),
+        })),
+        systemHealth: {
+            latestRateDate: latestRate.length > 0 ? (latestRate[0].date as string) : null,
+            intelligenceFresh,
+            totalProviders: parseInt(providerCount.count as string),
+        },
+    };
 }

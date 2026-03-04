@@ -1,9 +1,29 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Analytics } from "@vercel/analytics/react";
+import { usePathname } from "next/navigation";
 
 const CONSENT_KEY = "remitiq_cookie_consent";
+
+function PageViewTracker() {
+    const pathname = usePathname();
+    const lastPath = useRef("");
+
+    useEffect(() => {
+        if (pathname && pathname !== lastPath.current) {
+            lastPath.current = pathname;
+            // Fire and forget — don't block the UI
+            fetch("/api/track", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ event: "page_view", page: pathname }),
+            }).catch(() => { /* silently fail */ });
+        }
+    }, [pathname]);
+
+    return null;
+}
 
 export default function AnalyticsWrapper() {
     const [hasConsent, setHasConsent] = useState(false);
@@ -21,7 +41,12 @@ export default function AnalyticsWrapper() {
         return () => window.removeEventListener("storage", onStorage);
     }, []);
 
-    if (!hasConsent) return null;
-
-    return <Analytics />;
+    return (
+        <>
+            {/* Always track page views in our own database */}
+            <PageViewTracker />
+            {/* Vercel Analytics only with consent */}
+            {hasConsent && <Analytics />}
+        </>
+    );
 }

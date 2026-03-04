@@ -123,6 +123,11 @@ export default function AlertsPage() {
           {loading ? <><Loader2 className="w-5 h-5 animate-spin" /> Setting alert...</> : "Set My Free Alert"}
         </button>
         <p className="text-[#7A9CC4] text-xs text-center mt-4">Free forever. No spam. Unsubscribe anytime.</p>
+        <div className="mt-4 pt-4 border-t border-[#1E3A5F] text-center">
+          <a href="/alerts/manage" className="text-sm text-[#7A9CC4] hover:text-white transition-colors underline underline-offset-2">
+            Need to manage or delete your existing alerts?
+          </a>
+        </div>
       </form>
       <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
