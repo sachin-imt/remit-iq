@@ -136,6 +136,20 @@ async function ensureTables(): Promise<void> {
 
     await sql`CREATE INDEX IF NOT EXISTS idx_analytics_events_type ON analytics_events(event_type, created_at DESC)`;
 
+    await sql`
+        CREATE TABLE IF NOT EXISTS referrer_hits (
+            id SERIAL PRIMARY KEY,
+            referrer_domain TEXT NOT NULL,
+            referrer_url TEXT,
+            landing_page TEXT NOT NULL,
+            hit_date DATE NOT NULL DEFAULT CURRENT_DATE,
+            hit_count INT NOT NULL DEFAULT 1,
+            UNIQUE(referrer_domain, landing_page, hit_date)
+        )
+    `;
+
+    await sql`CREATE INDEX IF NOT EXISTS idx_referrer_hits_date ON referrer_hits(hit_date DESC)`;
+
     _initialized = true;
 }
 
@@ -643,9 +657,35 @@ export async function logAnalyticsEvent(
 }
 
 /**
+ * Log a referrer hit. Extracts the domain from the full URL and upserts daily count.
+ * referrerUrl: the full document.referrer from the browser (e.g. "https://google.com/search?q=...")
+ * landingPage: which page on RemitiQ they landed on
+ */
+export async function logReferrerHit(referrerUrl: string, landingPage: string): Promise<void> {
+    if (!referrerUrl) return;
+    await ensureTables();
+    const sql = getSQL();
+
+    let domain = referrerUrl;
+    try {
+        domain = new URL(referrerUrl).hostname.replace(/^www\./, "");
+    } catch {
+        // Malformed URL — store as-is truncated
+        domain = referrerUrl.slice(0, 100);
+    }
+
+    await sql`
+        INSERT INTO referrer_hits (referrer_domain, referrer_url, landing_page, hit_date, hit_count)
+        VALUES (${domain}, ${referrerUrl.slice(0, 500)}, ${landingPage}, CURRENT_DATE, 1)
+        ON CONFLICT (referrer_domain, landing_page, hit_date) DO UPDATE SET
+            hit_count = referrer_hits.hit_count + 1
+    `;
+}
+
+/**
  * Comprehensive analytics summary for the admin dashboard.
  */
-export async function getAnalyticsSummary(): Promise<{
+export async function getAnalyticsSummary(period: string = '7d'): Promise<{
     kpis: {
         totalAlerts: number;
         activeAlerts: number;
@@ -659,6 +699,7 @@ export async function getAnalyticsSummary(): Promise<{
     alertsByDay: Array<{ date: string; signups: number; unique_users: number }>;
     pageViewsByDay: Array<{ date: string; views: number }>;
     topPages: Array<{ page_path: string; total_views: number }>;
+    topReferrers: Array<{ referrer_domain: string; total_hits: number; landing_pages: string[] }>;
     recentEvents: Array<{ event_type: string; page_path: string | null; metadata: string | null; created_at: string }>;
     alertTypeDistribution: Array<{ alert_type: string; count: number }>;
     systemHealth: {
@@ -666,53 +707,96 @@ export async function getAnalyticsSummary(): Promise<{
         intelligenceFresh: boolean;
         totalProviders: number;
     };
+    period: string;
 }> {
     await ensureTables();
     const sql = getSQL();
 
-    // KPIs
+    // Determine date range from period
+    // period: '1d' | '7d' | '14d' | 'mtd' | 'qtd' | 'ytd'
+    const now = new Date();
+    type PeriodKey = '1d' | '7d' | '14d' | 'mtd' | 'qtd' | 'ytd';
+    const periodIntervals: Record<PeriodKey, string> = {
+        '1d':  '1 day',
+        '7d':  '7 days',
+        '14d': '14 days',
+        'mtd': `${now.getDate() - 1} days`,   // Start of current month
+        'qtd': `${Math.floor(now.getMonth() / 3) * 3 * 30 + (now.getDate() - 1)} days`, // Approx QTD
+        'ytd': `${Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) / 86400000)} days`,
+    };
+    const safeP = (periodIntervals[period as PeriodKey] ? period as PeriodKey : '7d');
+    const interval = periodIntervals[safeP];
+
+    // KPIs — page views exclude admin paths
     const [alertStats] = await sql`
         SELECT COUNT(*) as total, COUNT(CASE WHEN is_active THEN 1 END) as active
         FROM alerts
     `;
     const [uniqueUsers] = await sql`SELECT COUNT(DISTINCT email) as count FROM alerts`;
-    const [totalPV] = await sql`SELECT COALESCE(SUM(view_count), 0) as total FROM page_views`;
-    const [todayPV] = await sql`SELECT COALESCE(SUM(view_count), 0) as total FROM page_views WHERE view_date = CURRENT_DATE`;
-    const [weekPV] = await sql`SELECT COALESCE(SUM(view_count), 0) as total FROM page_views WHERE view_date >= CURRENT_DATE - INTERVAL '7 days'`;
+    const [totalPV] = await sql`
+        SELECT COALESCE(SUM(view_count), 0) as total FROM page_views
+        WHERE page_path NOT LIKE '/admin%'
+    `;
+    const [todayPV] = await sql`
+        SELECT COALESCE(SUM(view_count), 0) as total FROM page_views
+        WHERE view_date = CURRENT_DATE AND page_path NOT LIKE '/admin%'
+    `;
+    const [weekPV] = await sql`
+        SELECT COALESCE(SUM(view_count), 0) as total FROM page_views
+        WHERE view_date >= CURRENT_DATE - INTERVAL '7 days' AND page_path NOT LIKE '/admin%'
+    `;
     const [rateCount] = await sql`SELECT COUNT(*) as count FROM daily_rates`;
-    const [eventCount] = await sql`SELECT COUNT(*) as count FROM analytics_events`;
+    const [eventCount] = await sql`
+        SELECT COUNT(*) as count FROM analytics_events
+        WHERE event_type != 'page_view' OR page_path NOT LIKE '/admin%'
+    `;
 
-    // Alert signups by day (last 30 days)
+    // Alert signups over selected period
     const alertsByDay = await sql`
         SELECT DATE(created_at) as date, COUNT(*) as signups, COUNT(DISTINCT email) as unique_users
         FROM alerts
-        WHERE created_at >= NOW() - INTERVAL '30 days'
+        WHERE created_at >= NOW() - CAST(${interval} AS INTERVAL)
         GROUP BY DATE(created_at)
         ORDER BY date ASC
     `;
 
-    // Page views by day (last 30 days)
+    // Page views over selected period — exclude admin paths
     const pageViewsByDay = await sql`
         SELECT view_date as date, SUM(view_count) as views
         FROM page_views
-        WHERE view_date >= CURRENT_DATE - INTERVAL '30 days'
+        WHERE view_date >= CURRENT_DATE - CAST(${interval} AS INTERVAL)
+          AND page_path NOT LIKE '/admin%'
         GROUP BY view_date
         ORDER BY view_date ASC
     `;
 
-    // Top pages (all time, top 10)
+    // Top pages (within period, excluding admin)
     const topPages = await sql`
         SELECT page_path, SUM(view_count) as total_views
         FROM page_views
+        WHERE view_date >= CURRENT_DATE - CAST(${interval} AS INTERVAL)
+          AND page_path NOT LIKE '/admin%'
         GROUP BY page_path
         ORDER BY total_views DESC
         LIMIT 10
     `;
 
-    // Recent events (last 50)
+    // Top referrers (within period, top 10 by domain)
+    const topReferrersRaw = await sql`
+        SELECT referrer_domain, SUM(hit_count) as total_hits,
+               array_agg(DISTINCT landing_page ORDER BY landing_page) as landing_pages
+        FROM referrer_hits
+        WHERE hit_date >= CURRENT_DATE - CAST(${interval} AS INTERVAL)
+        GROUP BY referrer_domain
+        ORDER BY total_hits DESC
+        LIMIT 10
+    `;
+
+    // Recent events (last 50, excluding admin page views)
     const recentEvents = await sql`
         SELECT event_type, page_path, metadata, created_at
         FROM analytics_events
+        WHERE NOT (event_type = 'page_view' AND page_path LIKE '/admin%')
         ORDER BY created_at DESC
         LIMIT 50
     `;
@@ -759,6 +843,11 @@ export async function getAnalyticsSummary(): Promise<{
             page_path: r.page_path as string,
             total_views: parseInt(r.total_views as string),
         })),
+        topReferrers: topReferrersRaw.map(r => ({
+            referrer_domain: r.referrer_domain as string,
+            total_hits: parseInt(r.total_hits as string),
+            landing_pages: (r.landing_pages as string[]) || [],
+        })),
         recentEvents: recentEvents.map(r => ({
             event_type: r.event_type as string,
             page_path: r.page_path as string | null,
@@ -774,5 +863,6 @@ export async function getAnalyticsSummary(): Promise<{
             intelligenceFresh,
             totalProviders: parseInt(providerCount.count as string),
         },
+        period: safeP,
     };
 }

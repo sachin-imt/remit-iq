@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { usePathname } from "next/navigation";
 
 const CONSENT_KEY = "remitiq_cookie_consent";
+const REFERRER_SENT_KEY = "remitiq_referrer_sent";
 
 function PageViewTracker() {
     const pathname = usePathname();
@@ -13,12 +14,26 @@ function PageViewTracker() {
     useEffect(() => {
         if (pathname && pathname !== lastPath.current) {
             lastPath.current = pathname;
-            // Fire and forget — don't block the UI
+
+            // Capture referrer on the first page load of this session only
+            // (document.referrer is only set on the initial landing page)
+            const referrer = document.referrer || "";
+            const alreadySentReferrer = sessionStorage.getItem(REFERRER_SENT_KEY) === "1";
+
             fetch("/api/track", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ event: "page_view", page: pathname }),
+                body: JSON.stringify({
+                    event: "page_view",
+                    page: pathname,
+                    // Send referrer only on first page of the session
+                    referrer: alreadySentReferrer ? undefined : referrer,
+                }),
             }).catch(() => { /* silently fail */ });
+
+            if (!alreadySentReferrer) {
+                sessionStorage.setItem(REFERRER_SENT_KEY, "1");
+            }
         }
     }, [pathname]);
 
