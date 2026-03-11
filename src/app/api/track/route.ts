@@ -1,14 +1,55 @@
 /**
  * POST /api/track — Lightweight client-side event tracking
  * Logs page views and custom events to the database.
- * Admin paths (/admin/*) are always excluded.
+ * Excludes: admin paths, bots, automation tools, headless browsers.
  */
 
 import { NextResponse } from "next/server";
 import { logPageView, logAnalyticsEvent, logReferrerHit } from "@/lib/db";
 
+// Patterns that identify non-human traffic — drop silently
+const BOT_PATTERNS = [
+    /playwright/i,
+    /puppeteer/i,
+    /selenium/i,
+    /cypress/i,
+    /headless/i,
+    /phantomjs/i,
+    /HeadlessChrome/,
+    /Googlebot/i,
+    /Bingbot/i,
+    /baiduspider/i,
+    /YandexBot/i,
+    /AhrefsBot/i,
+    /SemrushBot/i,
+    /DotBot/i,
+    /MJ12bot/i,
+    /facebookexternalhit/i,
+    /Twitterbot/i,
+    /LinkedInBot/i,
+    /Slackbot/i,
+    /WhatsApp/i,
+    /curl\//i,
+    /python-requests/i,
+    /axios/i,
+    /Go-http-client/i,
+    /node-fetch/i,
+    /vercel-edge/i,
+];
+
+function isBot(userAgent: string | null): boolean {
+    if (!userAgent) return true; // No UA at all — treat as automated
+    return BOT_PATTERNS.some(p => p.test(userAgent));
+}
+
 export async function POST(request: Request) {
     try {
+        // Drop bot and automation traffic immediately — before any DB work
+        const ua = request.headers.get("user-agent");
+        if (isBot(ua)) {
+            return NextResponse.json({ ok: true, skipped: true });
+        }
+
         const body = await request.json();
         const { event, page, metadata, referrer } = body;
 
@@ -28,12 +69,11 @@ export async function POST(request: Request) {
         if (event === "page_view" && page) {
             await logPageView(page);
 
-            // Log referrer if this is a fresh session arrival (referrer from external domain)
+            // Log referrer on fresh external arrivals only
             if (referrer && typeof referrer === "string" && referrer.length > 0) {
                 try {
                     const referrerHost = new URL(referrer).hostname.replace(/^www\./, "");
                     const ownHost = "remitiq.co";
-                    // Only log external referrers (not internal navigation)
                     if (!referrerHost.includes(ownHost) && !referrerHost.includes("localhost")) {
                         await logReferrerHit(referrer, page);
                     }

@@ -727,12 +727,20 @@ export async function getAnalyticsSummary(period: string = '7d'): Promise<{
     const safeP = (periodIntervals[period as PeriodKey] ? period as PeriodKey : '7d');
     const interval = periodIntervals[safeP];
 
-    // KPIs — page views exclude admin paths
+    // Internal/test email patterns to exclude from all user-facing metrics
+    // These are from Playwright E2E tests and internal automation
+    const TEST_EMAIL_FILTER = sql`email NOT LIKE 'automated-test%' AND email NOT LIKE '%+test%'`;
+
+    // KPIs — page views exclude admin paths, alerts exclude test emails
     const [alertStats] = await sql`
         SELECT COUNT(*) as total, COUNT(CASE WHEN is_active THEN 1 END) as active
         FROM alerts
+        WHERE ${TEST_EMAIL_FILTER}
     `;
-    const [uniqueUsers] = await sql`SELECT COUNT(DISTINCT email) as count FROM alerts`;
+    const [uniqueUsers] = await sql`
+        SELECT COUNT(DISTINCT email) as count FROM alerts
+        WHERE ${TEST_EMAIL_FILTER}
+    `;
     const [totalPV] = await sql`
         SELECT COALESCE(SUM(view_count), 0) as total FROM page_views
         WHERE page_path NOT LIKE '/admin%'
@@ -751,11 +759,12 @@ export async function getAnalyticsSummary(period: string = '7d'): Promise<{
         WHERE event_type != 'page_view' OR page_path NOT LIKE '/admin%'
     `;
 
-    // Alert signups over selected period
+    // Alert signups over selected period — exclude test emails
     const alertsByDay = await sql`
         SELECT DATE(created_at) as date, COUNT(*) as signups, COUNT(DISTINCT email) as unique_users
         FROM alerts
         WHERE created_at >= NOW() - CAST(${interval} AS INTERVAL)
+          AND ${TEST_EMAIL_FILTER}
         GROUP BY DATE(created_at)
         ORDER BY date ASC
     `;
