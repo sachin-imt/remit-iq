@@ -4,6 +4,8 @@ import ChatWidget from "@/components/ChatWidget";
 import AnalyticsWrapper from "@/components/AnalyticsWrapper";
 import CookieConsent from "@/components/CookieConsent";
 import MobileNav from "@/components/MobileNav";
+import FacebookPixel from "@/components/FacebookPixel";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "RemitIQ: Best AUD to INR Exchange Rate | Compare & Send Money to India",
@@ -20,6 +22,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+        <Suspense fallback={null}>
+          <FacebookPixel />
+        </Suspense>
       </head>
       <body className="antialiased font-['Inter',system-ui,sans-serif] bg-slate-50 relative overflow-x-hidden">
         {/* Global Mesh Background */}
