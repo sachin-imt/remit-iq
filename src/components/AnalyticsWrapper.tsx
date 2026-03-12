@@ -15,10 +15,14 @@ function PageViewTracker() {
         if (pathname && pathname !== lastPath.current) {
             lastPath.current = pathname;
 
-            // Capture referrer on the first page load of this session only
-            // (document.referrer is only set on the initial landing page)
             const referrer = document.referrer || "";
             const alreadySentReferrer = sessionStorage.getItem(REFERRER_SENT_KEY) === "1";
+            const isInternal = localStorage.getItem("remitiq_internal_user") === "true";
+
+            if (isInternal) {
+                // Pre-emptively skip tracking for internal/admin users
+                return;
+            }
 
             fetch("/api/track", {
                 method: "POST",

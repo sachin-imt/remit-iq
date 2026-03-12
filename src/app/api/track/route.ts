@@ -35,18 +35,37 @@ const BOT_PATTERNS = [
     /Go-http-client/i,
     /node-fetch/i,
     /vercel-edge/i,
+    /Lighthouse/i,
+    /GTmetrix/i,
+    /Pingdom/i,
+    /UptimeRobot/i,
+    /Site24x7/i,
+    /BetterStack/i,
+    /Monitoring/i,
+    /HealthCheck/i,
 ];
 
-function isBot(userAgent: string | null): boolean {
-    if (!userAgent) return true; // No UA at all — treat as automated
-    return BOT_PATTERNS.some(p => p.test(userAgent));
+function isBot(request: Request): boolean {
+    const userAgent = request.headers.get("user-agent") || "";
+    
+    // Check specific Vercel system headers
+    const vercelId = request.headers.get("x-vercel-id");
+    const isVercelCheck = !!vercelId;
+    
+    // Check internal remitiq headers
+    const isInternal = !!request.headers.get("x-remitiq-internal") || !!request.headers.get("x-internal-test");
+
+    if (!userAgent && !isVercelCheck && !isInternal) return true; // No UA and no system headers — treat as automated
+    
+    const matchesUA = BOT_PATTERNS.some(p => p.test(userAgent));
+    
+    return matchesUA || isVercelCheck || isInternal;
 }
 
 export async function POST(request: Request) {
     try {
         // Drop bot and automation traffic immediately — before any DB work
-        const ua = request.headers.get("user-agent");
-        if (isBot(ua)) {
+        if (isBot(request)) {
             return NextResponse.json({ ok: true, skipped: true });
         }
 

@@ -139,6 +139,15 @@ export default function AnalyticsDashboardClient({ data: initialData, adminKey }
     const [period, setPeriod] = useState<Period>((initialData.period as Period) || "7d");
     const [loading, setLoading] = useState(false);
 
+    useEffect(() => {
+        // Flag this user as internal if they can see the dashboard
+        if (typeof window !== "undefined") {
+            try {
+                localStorage.setItem("remitiq_internal_user", "true");
+            } catch (e) { /* ignore */ }
+        }
+    }, []);
+
     const fetchData = useCallback(async (p: Period) => {
         setLoading(true);
         try {
