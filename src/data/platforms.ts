@@ -32,7 +32,7 @@ export const PROVIDER_DEFINITIONS = [
   { id: "remitly", name: "Remitly", abbr: "R", marginPct: 0.06, baseFee: 0, feePct: 0, promoMarginPct: -0.93, promoCap: 1500, speed: "Minutes", speedDays: 0, color: "#FF6B35", stars: 4.7, badge: "NO FEES" as string | null, paymentMethods: ["Bank Transfer", "Debit Card"], affiliateUrl: "https://www.remitly.com/au/en/india", promoText: "Zero fees on first 3 transfers" as string | null, isLive: false, lastVerified: "2026-02-21", marginSource: "Manual check vs remitly.com" },
   { id: "torfx", name: "TorFX", abbr: "T", marginPct: 0.75, baseFee: 0, feePct: 0, speed: "1-2 days", speedDays: 2, color: "#818CF8", stars: 4.6, badge: null, paymentMethods: ["Bank Transfer"], affiliateUrl: "https://www.torfx.com/", promoText: null, isLive: false, lastVerified: "2026-02-21", marginSource: "Manual check vs torfx.com" },
   { id: "ofx", name: "OFX", abbr: "O", marginPct: 0.86, baseFee: 0, feePct: 0, speed: "1-2 days", speedDays: 2, color: "#34D399", stars: 4.5, badge: null, paymentMethods: ["Bank Transfer"], affiliateUrl: "https://www.ofx.com/en-au/", promoText: "No fees on transfers over $1,000" as string | null, isLive: false, lastVerified: "2026-02-21", marginSource: "Manual check vs ofx.com" },
-  { id: "instarem", name: "Instarem", abbr: "I", marginPct: 1.03, baseFee: 1.99, feePct: 0, speed: "Same day", speedDays: 0.5, color: "#FBBF24", stars: 4.4, badge: null, paymentMethods: ["Bank Transfer", "PayID"], affiliateUrl: "https://www.instarem.com/en-au/", promoText: null, isLive: false, lastVerified: "2026-02-21", marginSource: "Manual check vs instarem.com" },
+  { id: "instarem", name: "Instarem", abbr: "I", marginPct: 1.03, baseFee: 1.99, feePct: 0, speed: "Same day", speedDays: 0.5, color: "#FBBF24", stars: 4.4, badge: null, paymentMethods: ["Bank Transfer", "PayID"], affiliateUrl: "https://instarem.prf.hn/click/camref:1101l5F4pg", promoText: null, isLive: false, lastVerified: "2026-02-21", marginSource: "Manual check vs instarem.com" },
   { id: "wu", name: "Western Union", abbr: "WU", marginPct: 1.86, baseFee: 4.99, feePct: 0, speed: "Minutes", speedDays: 0, color: "#F87171", stars: 3.9, badge: null, paymentMethods: ["Bank Transfer", "Debit Card", "Cash"], affiliateUrl: "https://www.westernunion.com/au/en/web/send-money/estimate-details", promoText: "Zero fees & 0% margin for new users" as string | null, isLive: false, lastVerified: "2026-02-21", marginSource: "Manual check vs westernunion.com" },
 ];
 
@@ -141,15 +141,22 @@ export function getAffiliateUrlWithAmount(
   pubref: string = "compare"
 ): string {
   try {
-    if (platformId === "wise") {
-      // Construct the Wise deeplink destination URL
-      const deeplink = new URL("https://wise.com/au/send-money/send-money-to-india");
-      deeplink.searchParams.set("sourceCurrency", "AUD");
-      deeplink.searchParams.set("targetCurrency", "INR");
-      deeplink.searchParams.set("sourceAmount", amount.toString());
+    if (platformId === "wise" || platformId === "instarem") {
+      // Partnerize-style deeplinking
+      let destination = "";
+      
+      if (platformId === "wise") {
+        const deeplink = new URL("https://wise.com/au/send-money/send-money-to-india");
+        deeplink.searchParams.set("sourceCurrency", "AUD");
+        deeplink.searchParams.set("targetCurrency", "INR");
+        deeplink.searchParams.set("sourceAmount", amount.toString());
+        destination = deeplink.toString();
+      } else if (platformId === "instarem") {
+        // Instarem landing page (AUD -> INR)
+        destination = "https://www.instarem.com/en-au/send-money/au-to-in";
+      }
 
-      // Build the full Partnerize tracking URL with pubref and encoded deeplink
-      const encodedDestination = encodeURIComponent(deeplink.toString());
+      const encodedDestination = encodeURIComponent(destination);
       return `${baseUrl}/pubref:${pubref}/destination:${encodedDestination}`;
     }
 
@@ -166,7 +173,7 @@ export function getAffiliateUrlWithAmount(
         url.searchParams.set("ISOCurrency", "INR");
         break;
       case "instarem":
-        // Instarem does not support URL amount parameters
+        // Fallback or old tracking link - no amount support
         break;
       default:
         url.searchParams.set("amount", amount.toString());
