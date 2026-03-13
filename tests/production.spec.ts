@@ -35,6 +35,9 @@ test.describe('Production E2E Tests', () => {
     test('Rate Alerts page form submission works', async ({ page }) => {
         await page.goto('/alerts');
 
+        // Wait for the "Current best rate" to load (stabilize dynamic form state)
+        await expect(page.locator('text=Current best rate: ₹')).toBeVisible({ timeout: 10000 });
+
         // Fill out form
         await page.fill('input[type="email"]', 'automated-test@remitiq.co');
         await page.fill('input[type="number"]', '65.00');
@@ -55,8 +58,8 @@ test.describe('Production E2E Tests', () => {
             await rejectBtn.click();
         }
 
-        // Click floating action button
-        await page.click('button.bg-\\[\\#F0B429\\]');
+        // Click floating action button (use aria-label for better stability)
+        await page.click('button[aria-label="Open RemitIQ assistant"]');
 
         // Verify chat header is visible
         await expect(page.locator('text=RemitIQ Assistant')).toBeVisible();

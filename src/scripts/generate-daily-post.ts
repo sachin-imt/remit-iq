@@ -42,8 +42,15 @@ async function generateDailyPost() {
     }
 
     // 2. FETCH MARKET INTELLIGENCE
-    console.log("📊 Fetching live market data from SQLite cache...");
-    const cachedData = await getCachedIntelligence();
+    console.log("📊 Fetching live market data from database cache...");
+    let cachedData = null;
+    try {
+        cachedData = await getCachedIntelligence();
+    } catch (dbError) {
+        console.error("❌ Database connection failed. Ensure POSTGRES_URL is set correctly in GitHub Secrets.");
+        console.error(dbError);
+    }
+
     const midRate = cachedData ? cachedData.midMarketRate : '64.00';
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const dataObj = cachedData?.data as any;
