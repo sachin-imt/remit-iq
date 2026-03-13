@@ -113,31 +113,52 @@ export async function POST(request: Request) {
             { role: "user", content: message },
         ];
 
-        // Call OpenAI
-        const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${openaiKey}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                model: "gpt-4o-mini",
-                messages,
-                max_tokens: 600,
-                temperature: 0.4,
-            }),
-        });
+        // Call OpenAI with timeout
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
 
-        if (!openaiRes.ok) {
-            const err = await openaiRes.text();
-            console.error("[Analytics Chat] OpenAI error:", err);
-            return NextResponse.json({ error: "AI service error" }, { status: 502 });
+        try {
+            const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${openaiKey}`,
+                    "Content-Type": "application/json",
+                },
+                signal: controller.signal,
+                body: JSON.stringify({
+                    model: "gpt-4o-mini",
+                    messages,
+                    max_tokens: 600,
+                    temperature: 0.4,
+                }),
+            });
+
+            clearTimeout(timeout);
+
+            if (!openaiRes.ok) {
+                const errStatus = openaiRes.status;
+                const errText = await openaiRes.text();
+                console.error(`[Analytics Chat] OpenAI error (${errStatus}):`, errText);
+                
+                // Return a more descriptive error if it's a known issue
+                if (errStatus === 401) return NextResponse.json({ error: "OpenAI configuration error (API Key)" }, { status: 500 });
+                if (errStatus === 429) return NextResponse.json({ error: "AI rate limit exceeded" }, { status: 502 });
+                
+                return NextResponse.json({ error: "AI service error" }, { status: 502 });
+            }
+
+            const openaiData = await openaiRes.json();
+            const reply = openaiData.choices?.[0]?.message?.content ?? "Sorry, I couldn't generate a response.";
+
+            return NextResponse.json({ reply });
+        } catch (fetchErr: any) {
+            clearTimeout(timeout);
+            if (fetchErr.name === 'AbortError') {
+                console.error("[Analytics Chat] OpenAI request timed out after 15s");
+                return NextResponse.json({ error: "AI response timed out" }, { status: 504 });
+            }
+            throw fetchErr;
         }
-
-        const openaiData = await openaiRes.json();
-        const reply = openaiData.choices?.[0]?.message?.content ?? "Sorry, I couldn't generate a response.";
-
-        return NextResponse.json({ reply });
     } catch (error) {
         console.error("[Analytics Chat] Error:", error);
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });
