@@ -78,24 +78,23 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "OpenAI API key not configured" }, { status: 500 });
         }
 
-        // Fetch 14 days of context for efficiency
-        const analyticsData = await getAnalyticsSummary('14d');
+        // Fetch only 7 days for maximum efficiency
+        const analyticsData = await getAnalyticsSummary('7d');
         const systemPrompt = buildSystemPrompt(analyticsData);
 
-        // Build message array (compact history)
+        // Minimal history (last 2 turns)
         const messages = [
             { role: "system", content: systemPrompt },
-            ...history.slice(-4).map((m: ChatMessage) => ({ role: m.role, content: m.content })),
+            ...history.slice(-2).map((m: ChatMessage) => ({ role: m.role, content: m.content })),
             { role: "user", content: message },
         ];
 
-        // Retry logic for rate limits
         let retries = 0;
         const maxRetries = 2;
 
         while (retries <= maxRetries) {
             const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 15000);
+            const timeout = setTimeout(() => controller.abort(), 12000); 
 
             try {
                 const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -108,7 +107,7 @@ export async function POST(request: Request) {
                     body: JSON.stringify({
                         model: "gpt-4o-mini",
                         messages,
-                        max_tokens: 400,
+                        max_tokens: 300,
                         temperature: 0.3,
                     }),
                 });
@@ -123,8 +122,9 @@ export async function POST(request: Request) {
 
                 if (openaiRes.status === 429 && retries < maxRetries) {
                     retries++;
-                    const wait = retries * 2000;
-                    console.warn(`[Analytics AI] Rate limited. Retrying in ${wait}ms... (Attempt ${retries})`);
+                    // Increased backoff for low RPM accounts
+                    const wait = retries * 5000; 
+                    console.warn(`[Analytics AI] Rate limited. Waiting ${wait}ms...`);
                     await new Promise(r => setTimeout(r, wait));
                     continue;
                 }
@@ -134,15 +134,19 @@ export async function POST(request: Request) {
                 console.error(`[Analytics Chat] OpenAI error (${errStatus}):`, errText);
                 
                 if (errStatus === 401) return NextResponse.json({ error: "OpenAI API Key Error" }, { status: 500 });
-                if (errStatus === 429) return NextResponse.json({ error: "Rate limit exceeded. Please try again in 1 minute." }, { status: 502 });
+                if (errStatus === 429) {
+                    const isQuota = errText.toLowerCase().includes("quota") || errText.toLowerCase().includes("insufficient");
+                    return NextResponse.json({ 
+                        error: isQuota 
+                            ? "OpenAI Quota Exceeded. Please check your billing/credits." 
+                            : "AI Rate limit reached. This usually happens on free OpenAI accounts. Please wait 1 minute." 
+                    }, { status: 502 });
+                }
                 
                 return NextResponse.json({ error: "AI service error" }, { status: 502 });
             } catch (fetchErr: any) {
                 clearTimeout(timeout);
-                if (fetchErr.name === 'AbortError') {
-                    console.error("[Analytics Chat] OpenAI request timed out");
-                    return NextResponse.json({ error: "AI timed out" }, { status: 504 });
-                }
+                if (fetchErr.name === 'AbortError') return NextResponse.json({ error: "AI timed out" }, { status: 504 });
                 throw fetchErr;
             }
         }
