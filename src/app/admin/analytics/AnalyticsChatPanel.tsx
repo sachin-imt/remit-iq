@@ -86,12 +86,13 @@ export default function AnalyticsChatPanel({ adminKey }: { adminKey: string }) {
             });
 
             const data = await res.json();
-            const reply = data.reply || data.error || "Sorry, something went wrong.";
+            const reply = data.reply || data.error || "AI service error. Please try again.";
             setMessages(prev => [...prev, { role: "assistant", content: reply }]);
-        } catch {
+        } catch (err) {
+            console.error("Chat error:", err);
             setMessages(prev => [...prev, {
                 role: "assistant",
-                content: "Sorry, I couldn't reach the server. Please try again.",
+                content: "Network error. Please check your connection and try again.",
             }]);
         } finally {
             setLoading(false);

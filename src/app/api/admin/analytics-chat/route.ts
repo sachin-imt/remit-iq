@@ -15,68 +15,45 @@ interface ChatMessage {
 }
 
 function buildSystemPrompt(data: Awaited<ReturnType<typeof getAnalyticsSummary>>): string {
-    const { kpis, alertsByDay, pageViewsByDay, topPages, recentEvents, alertTypeDistribution, systemHealth } = data;
+    const { kpis, alertsByDay, pageViewsByDay, topPages, recentEvents, alertTypeDistribution } = data;
 
-    const alertTimeline = alertsByDay
-        .map(d => `  ${d.date}: ${d.signups} signups (${d.unique_users} unique)`)
-        .join("\n") || "  No signups yet";
+    // Compact data formats for token efficiency (14 days max)
+    const alertTimeline = alertsByDay.slice(-14)
+        .map(d => `${d.date.slice(5)}:${d.signups}(${d.unique_users})`)
+        .join(",") || "none";
 
-    const pvTimeline = pageViewsByDay
-        .map(d => `  ${d.date}: ${d.views} views`)
-        .join("\n") || "  No data yet";
+    const pvTimeline = pageViewsByDay.slice(-14)
+        .map(d => `${d.date.slice(5)}:${d.views}`)
+        .join(",") || "none";
 
-    const topPagesList = topPages
-        .map((p, i) => `  ${i + 1}. ${p.page_path} — ${p.total_views} views`)
-        .join("\n") || "  No data yet";
+    const topPagesList = topPages.slice(0, 5)
+        .map((p, i) => `${i + 1}.${p.page_path}(${p.total_views})`)
+        .join("; ");
 
-    const recentEventsList = recentEvents.slice(0, 10)
-        .map(e => `  [${new Date(e.created_at).toISOString().slice(0, 16)}] ${e.event_type} on ${e.page_path || "?"} ${e.metadata ? `(${e.metadata})` : ""}`)
-        .join("\n") || "  No events yet";
+    const recentEventsList = recentEvents.slice(0, 8)
+        .map(e => `[${e.created_at.slice(11, 16)}] ${e.event_type} on ${e.page_path || ""}`)
+        .join("\n");
 
-    const alertDist = alertTypeDistribution
-        .map(d => `  ${d.alert_type}: ${d.count}`)
-        .join("\n") || "  No data";
+    const alertDistArr = alertTypeDistribution.map(d => `${d.alert_type}:${d.count}`).join(", ");
 
-    return `You are an analytics assistant for RemitIQ — an AUD-to-INR money transfer comparison platform based in Australia. You have access to live database metrics and can answer any question about user growth, traffic, alerts, events, and system health.
+    return `You are RemitIQ's Analytics AI. Answer questions about user growth, traffic, and system health.
+Today: ${new Date().toISOString().slice(0, 10)}
 
-Today's date: ${new Date().toISOString().slice(0, 10)}
-
-=== KEY METRICS ===
-Unique Users (alert subscribers): ${kpis.uniqueUsers}
-Total Alerts: ${kpis.totalAlerts}
-Active Alerts: ${kpis.activeAlerts}
-Triggered Alerts: ${kpis.totalAlerts - kpis.activeAlerts}
-Page Views — Today: ${kpis.todayPageViews} | This Week: ${kpis.weekPageViews} | All Time: ${kpis.totalPageViews}
-Daily Exchange Rate Records in DB: ${kpis.totalRateRecords}
-Total Tracked Events: ${kpis.totalEvents}
-
-=== ALERT SIGNUPS (last 30 days, daily) ===
-${alertTimeline}
-
-=== PAGE VIEWS (last 30 days, daily) ===
-${pvTimeline}
-
-=== TOP PAGES (all time) ===
-${topPagesList}
-
-=== ALERT TYPE BREAKDOWN ===
-${alertDist}
-
-=== RECENT EVENTS (last 10) ===
+METRICS: Users:${kpis.uniqueUsers}, Alerts:${kpis.totalAlerts}, Active:${kpis.activeAlerts}, PV_Today:${kpis.todayPageViews}, PV_Week:${kpis.weekPageViews}, Events:${kpis.totalEvents}
+SIGNUPS(MM-DD:Count(Unique)): ${alertTimeline}
+VIEWS(MM-DD:Count): ${pvTimeline}
+TOP_PAGES: ${topPagesList}
+ALERTS: ${alertDistArr}
+EVENTS:
 ${recentEventsList}
 
-=== SYSTEM HEALTH ===
-Latest exchange rate data: ${systemHealth.latestRateDate || "None"}
-Intelligence cache: ${systemHealth.intelligenceFresh ? "Fresh (< 24h)" : "Stale (> 24h)"}
-Providers configured in DB: ${systemHealth.totalProviders}
+CONTEXT:
+- App is early-stage; most signups are automated Playwright tests (automated-test@remitiq.co).
+- Organic traffic is pre-launch.
+- Providers: Wise, Remitly, TorFX, OFX, Instarem, Western Union.
+- Goal: Australians sending to India.
 
-=== CONTEXT ===
-- The app is early-stage; most alert signups are from automated Playwright E2E tests using automated-test@remitiq.co
-- Organic users haven't arrived yet — the product is pre-launch
-- The site compares 6 providers: Wise, Remitly, TorFX, OFX, Instarem, Western Union
-- The team's goal is to attract Australians sending money to India
-
-Answer questions concisely and helpfully. Use bullet points when listing items. If data is missing or zero, say so honestly and suggest what to look for. Don't invent numbers. Format numbers clearly (e.g. "48 alerts"). Keep responses under 200 words unless a longer breakdown is needed.`;
+Reply CONCISELY (<150 words). Use bullets for lists. Be honest if data is missing. No financial advice.`;
 }
 
 export async function POST(request: Request) {
@@ -101,66 +78,77 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "OpenAI API key not configured" }, { status: 500 });
         }
 
-        // Fetch fresh analytics data from DB
-        const analyticsData = await getAnalyticsSummary();
+        // Fetch 14 days of context for efficiency
+        const analyticsData = await getAnalyticsSummary('14d');
         const systemPrompt = buildSystemPrompt(analyticsData);
 
-        // Build message array for OpenAI
+        // Build message array (compact history)
         const messages = [
             { role: "system", content: systemPrompt },
-            // Include conversation history (last 6 turns)
-            ...history.slice(-6).map((m: ChatMessage) => ({ role: m.role, content: m.content })),
+            ...history.slice(-4).map((m: ChatMessage) => ({ role: m.role, content: m.content })),
             { role: "user", content: message },
         ];
 
-        // Call OpenAI with timeout
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
+        // Retry logic for rate limits
+        let retries = 0;
+        const maxRetries = 2;
 
-        try {
-            const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${openaiKey}`,
-                    "Content-Type": "application/json",
-                },
-                signal: controller.signal,
-                body: JSON.stringify({
-                    model: "gpt-4o-mini",
-                    messages,
-                    max_tokens: 600,
-                    temperature: 0.4,
-                }),
-            });
+        while (retries <= maxRetries) {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 15000);
 
-            clearTimeout(timeout);
+            try {
+                const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${openaiKey}`,
+                        "Content-Type": "application/json",
+                    },
+                    signal: controller.signal,
+                    body: JSON.stringify({
+                        model: "gpt-4o-mini",
+                        messages,
+                        max_tokens: 400,
+                        temperature: 0.3,
+                    }),
+                });
 
-            if (!openaiRes.ok) {
+                clearTimeout(timeout);
+
+                if (openaiRes.ok) {
+                    const openaiData = await openaiRes.json();
+                    const reply = openaiData.choices?.[0]?.message?.content ?? "No response.";
+                    return NextResponse.json({ reply });
+                }
+
+                if (openaiRes.status === 429 && retries < maxRetries) {
+                    retries++;
+                    const wait = retries * 2000;
+                    console.warn(`[Analytics AI] Rate limited. Retrying in ${wait}ms... (Attempt ${retries})`);
+                    await new Promise(r => setTimeout(r, wait));
+                    continue;
+                }
+
                 const errStatus = openaiRes.status;
                 const errText = await openaiRes.text();
                 console.error(`[Analytics Chat] OpenAI error (${errStatus}):`, errText);
                 
-                // Return a more descriptive error if it's a known issue
-                if (errStatus === 401) return NextResponse.json({ error: "OpenAI configuration error (API Key)" }, { status: 500 });
-                if (errStatus === 429) return NextResponse.json({ error: "AI rate limit exceeded" }, { status: 502 });
+                if (errStatus === 401) return NextResponse.json({ error: "OpenAI API Key Error" }, { status: 500 });
+                if (errStatus === 429) return NextResponse.json({ error: "Rate limit exceeded. Please try again in 1 minute." }, { status: 502 });
                 
                 return NextResponse.json({ error: "AI service error" }, { status: 502 });
+            } catch (fetchErr: any) {
+                clearTimeout(timeout);
+                if (fetchErr.name === 'AbortError') {
+                    console.error("[Analytics Chat] OpenAI request timed out");
+                    return NextResponse.json({ error: "AI timed out" }, { status: 504 });
+                }
+                throw fetchErr;
             }
-
-            const openaiData = await openaiRes.json();
-            const reply = openaiData.choices?.[0]?.message?.content ?? "Sorry, I couldn't generate a response.";
-
-            return NextResponse.json({ reply });
-        } catch (fetchErr: any) {
-            clearTimeout(timeout);
-            if (fetchErr.name === 'AbortError') {
-                console.error("[Analytics Chat] OpenAI request timed out after 15s");
-                return NextResponse.json({ error: "AI response timed out" }, { status: 504 });
-            }
-            throw fetchErr;
         }
     } catch (error) {
         console.error("[Analytics Chat] Error:", error);
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
+    return NextResponse.json({ error: "Failed to reach AI" }, { status: 500 });
 }
