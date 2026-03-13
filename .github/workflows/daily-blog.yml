@@ -27,6 +27,8 @@ jobs:
 
       - name: Generate Daily Insight Post
         run: npx tsx src/scripts/generate-daily-post.ts
+        env:
+          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
 
       - name: Commit and Push new MDX
         run: |
