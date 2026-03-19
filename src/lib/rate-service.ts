@@ -1,13 +1,11 @@
 /**
- * Rate Service — Fetches real AUD/INR exchange rate data
+ * Rate Service — Fetches real X/INR exchange rate data
  * ======================================================
  * Primary: Wise public API (updates continuously, no auth)
  * Fallback: Frankfurter API (ECB data, updates daily)
  *
- * - 1-hour in-memory cache to avoid redundant fetches
- * - Wise endpoints:
- *   - Live: wise.com/rates/live?source=AUD&target=INR
- *   - History: wise.com/rates/history+live?source=AUD&target=INR&length=N&resolution=daily&unit=day
+ * - 1-hour in-memory cache (keyed by currency) to avoid redundant fetches
+ * - Supports any source currency → INR
  */
 
 import type { RateDataPoint } from "./types";
@@ -20,11 +18,17 @@ interface CacheEntry<T> {
 }
 
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
-let historicalCache: CacheEntry<RateDataPoint[]> | null = null;
-let latestRateCache: CacheEntry<{ rate: number; source: string }> | null = null;
+const historicalCacheMap = new Map<string, CacheEntry<RateDataPoint[]>>();
+const latestRateCacheMap = new Map<string, CacheEntry<{ rate: number; source: string }>>();
 
-function isCacheValid<T>(cache: CacheEntry<T> | null): cache is CacheEntry<T> {
-    return cache !== null && Date.now() - cache.timestamp < CACHE_TTL_MS;
+function getCachedHistorical(currency: string): CacheEntry<RateDataPoint[]> | null {
+    const entry = historicalCacheMap.get(currency) || null;
+    return entry && Date.now() - entry.timestamp < CACHE_TTL_MS ? entry : null;
+}
+
+function getCachedLatest(currency: string): CacheEntry<{ rate: number; source: string }> | null {
+    const entry = latestRateCacheMap.get(currency) || null;
+    return entry && Date.now() - entry.timestamp < CACHE_TTL_MS ? entry : null;
 }
 
 // ─── Wise API Types ─────────────────────────────────────────────────────────
@@ -63,18 +67,17 @@ interface FrankfurterLatestResponse {
 // ─── Fetch Functions ────────────────────────────────────────────────────────
 
 /**
- * Fetch the latest AUD/INR mid-market rate.
+ * Fetch the latest X/INR mid-market rate.
  * Primary: Wise | Fallback: Frankfurter (ECB)
  */
-export async function fetchLatestRate(): Promise<{ rate: number; source: string }> {
-    if (isCacheValid(latestRateCache)) {
-        return latestRateCache.data;
-    }
+export async function fetchLatestRate(sourceCurrency: string = "AUD"): Promise<{ rate: number; source: string }> {
+    const cached = getCachedLatest(sourceCurrency);
+    if (cached) return cached.data;
 
     // Try Wise first
     try {
         const response = await fetch(
-            "https://wise.com/rates/live?source=AUD&target=INR",
+            `https://wise.com/rates/live?source=${sourceCurrency}&target=INR`,
             {
                 headers: { "User-Agent": "RemitIQ/1.0" },
                 signal: AbortSignal.timeout(5000),
@@ -84,99 +87,55 @@ export async function fetchLatestRate(): Promise<{ rate: number; source: string 
         if (response.ok) {
             const data: WiseLiveRate = await response.json();
             const result = { rate: data.value, source: "wise" };
-            latestRateCache = { data: result, timestamp: Date.now() };
-            console.log(`[RateService] Wise live rate: ₹${data.value}`);
+            latestRateCacheMap.set(sourceCurrency, { data: result, timestamp: Date.now() });
+            console.log(`[RateService] Wise live ${sourceCurrency}/INR rate: ₹${data.value}`);
             return result;
         }
     } catch (error) {
-        console.warn("[RateService] Wise live rate failed, falling back to Frankfurter:", error);
+        console.warn(`[RateService] Wise live ${sourceCurrency}/INR failed, falling back:`, error);
     }
 
     // Fallback: Frankfurter (ECB)
     try {
         const response = await fetch(
-            "https://api.frankfurter.app/latest?from=AUD&to=INR",
+            `https://api.frankfurter.app/latest?from=${sourceCurrency}&to=INR`,
             { signal: AbortSignal.timeout(5000) }
         );
 
         if (response.ok) {
             const data: FrankfurterLatestResponse = await response.json();
             const result = { rate: data.rates.INR, source: "frankfurter" };
-            latestRateCache = { data: result, timestamp: Date.now() };
-            console.log(`[RateService] Frankfurter rate: ₹${data.rates.INR}`);
+            latestRateCacheMap.set(sourceCurrency, { data: result, timestamp: Date.now() });
+            console.log(`[RateService] Frankfurter ${sourceCurrency}/INR rate: ₹${data.rates.INR}`);
             return result;
         }
     } catch (error) {
-        console.warn("[RateService] Frankfurter also failed:", error);
+        console.warn(`[RateService] Frankfurter ${sourceCurrency}/INR also failed:`, error);
     }
 
     // Last resort: return stale cache or hardcoded
-    if (latestRateCache) return latestRateCache.data;
+    const stale = latestRateCacheMap.get(sourceCurrency);
+    if (stale) return stale.data;
     return { rate: 64.10, source: "fallback" };
 }
 
 /**
- * Fetch historical AUD/INR rates.
+ * Fetch historical X/INR rates.
  * Primary: Wise (30-day history) | Fallback: Frankfurter (180 days)
  */
 export async function fetchHistoricalRates(
-    days: number = 180
+    days: number = 180,
+    sourceCurrency: string = "AUD"
 ): Promise<{ data: RateDataPoint[]; source: string }> {
-    if (isCacheValid(historicalCache) && historicalCache.data.length >= days * 0.6) {
-        return { data: historicalCache.data, source: "cache" };
+    const cached = getCachedHistorical(sourceCurrency);
+    if (cached && cached.data.length >= days * 0.6) {
+        return { data: cached.data, source: "cache" };
     }
 
-    // Try Wise first (max ~30 days of daily history)
-    try {
-        const wiseDays = Math.min(days, 30);
-        const response = await fetch(
-            `https://wise.com/rates/history+live?source=AUD&target=INR&length=${wiseDays}&resolution=daily&unit=day`,
-            {
-                headers: { "User-Agent": "RemitIQ/1.0" },
-                signal: AbortSignal.timeout(10000),
-            }
-        );
-
-        if (response.ok) {
-            const wiseData: WiseHistoryRate[] = await response.json();
-
-            if (wiseData.length >= 10) {
-                const dataPoints: RateDataPoint[] = wiseData.map((item) => {
-                    const dt = new Date(item.time);
-                    const midMarketRate = item.value;
-                    const bestRate = parseFloat((midMarketRate * (1 - 0.0034)).toFixed(2)); // Wise margin
-
-                    return {
-                        date: dt.toISOString().split("T")[0],
-                        day: dt.toLocaleDateString("en-AU", { day: "numeric", month: "short" }),
-                        rate: bestRate,
-                        midMarket: parseFloat(midMarketRate.toFixed(4)),
-                    };
-                });
-
-                // Sort chronologically
-                dataPoints.sort((a, b) => a.date.localeCompare(b.date));
-
-                historicalCache = { data: dataPoints, timestamp: Date.now() };
-
-                // Also update latest rate cache
-                if (dataPoints.length > 0) {
-                    const latest = dataPoints[dataPoints.length - 1];
-                    latestRateCache = {
-                        data: { rate: latest.midMarket, source: "wise" },
-                        timestamp: Date.now(),
-                    };
-                }
-
-                console.log(`[RateService] Wise history: ${dataPoints.length} data points`);
-                return { data: dataPoints, source: "wise" };
-            }
-        }
-    } catch (error) {
-        console.warn("[RateService] Wise history failed, falling back to Frankfurter:", error);
-    }
-
-    // Fallback: Frankfurter (supports up to 180 days)
+    // Primary: Frankfurter (ECB daily rates — one official fix per day, never changes intraday)
+    // This is the stability-critical choice: Wise "history+live" includes a live intraday rate
+    // that fluctuates, causing the computed signal to flip between refreshes. ECB daily rates
+    // are deterministic — the signal only changes when the next day's rate is published.
     try {
         const endDate = new Date();
         const startDate = new Date();
@@ -186,8 +145,8 @@ export async function fetchHistoricalRates(
         const endStr = formatDate(endDate);
 
         const response = await fetch(
-            `https://api.frankfurter.app/${startStr}..${endStr}?from=AUD&to=INR`,
-            { signal: AbortSignal.timeout(10000) }
+            `https://api.frankfurter.app/${startStr}..${endStr}?from=${sourceCurrency}&to=INR`,
+            { signal: AbortSignal.timeout(6000) }
         );
 
         if (response.ok) {
@@ -209,25 +168,26 @@ export async function fetchHistoricalRates(
                 };
             });
 
-            historicalCache = { data: dataPoints, timestamp: Date.now() };
+            historicalCacheMap.set(sourceCurrency, { data: dataPoints, timestamp: Date.now() });
 
             if (dataPoints.length > 0) {
                 const latest = dataPoints[dataPoints.length - 1];
-                latestRateCache = {
+                latestRateCacheMap.set(sourceCurrency, {
                     data: { rate: latest.midMarket, source: "frankfurter" },
                     timestamp: Date.now(),
-                };
+                });
             }
 
-            console.log(`[RateService] Frankfurter history: ${dataPoints.length} data points`);
+            console.log(`[RateService] Frankfurter ${sourceCurrency}/INR history: ${dataPoints.length} data points`);
             return { data: dataPoints, source: "frankfurter" };
         }
     } catch (error) {
-        console.warn("[RateService] Frankfurter history also failed:", error);
+        console.warn(`[RateService] Frankfurter ${sourceCurrency}/INR history failed:`, error);
     }
 
     // Last resort
-    if (historicalCache) return { data: historicalCache.data, source: "cache" };
+    const stale = historicalCacheMap.get(sourceCurrency);
+    if (stale) return { data: stale.data, source: "cache" };
     return { data: generateFallbackData(days), source: "fallback" };
 }
 
@@ -237,7 +197,8 @@ export async function fetchHistoricalRates(
  * Frankfurter API is rate-limited so we fetch in yearly chunks.
  */
 export async function fetchLongTermHistory(
-    years: number = 3
+    years: number = 3,
+    sourceCurrency: string = "AUD"
 ): Promise<{ data: RateDataPoint[]; source: string }> {
     const allDataPoints: RateDataPoint[] = [];
 
@@ -252,7 +213,7 @@ export async function fetchLongTermHistory(
 
         try {
             const response = await fetch(
-                `https://api.frankfurter.app/${startStr}..${endStr}?from=AUD&to=INR`,
+                `https://api.frankfurter.app/${startStr}..${endStr}?from=${sourceCurrency}&to=INR`,
                 { signal: AbortSignal.timeout(15000) }
             );
 

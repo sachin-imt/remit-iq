@@ -1,8 +1,10 @@
 "use client";
 import { useState, useMemo, useEffect } from "react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
-import { ArrowUpRight, TrendingUp, Clock, Bell, Shield, Zap, ChevronRight, Star, BarChart3, Loader2 } from "lucide-react";
+import { ArrowUpRight, TrendingUp, Clock, Bell, Shield, Zap, ChevronRight, Star, BarChart3, Loader2, Share2, Check } from "lucide-react";
 import { getRankedPlatforms, formatINR, DEFAULT_MID_MARKET_RATE, getPlatforms, calcReceived, getAffiliateUrlWithAmount } from "@/data/platforms";
+import { useCountry } from "@/components/CountryContext";
+import CountrySelector from "@/components/CountrySelector";
 
 interface SignalFactor {
   name: string;
@@ -110,16 +112,19 @@ export default function HomePage() {
   const [inputVal, setInputVal] = useState("2,000");
   const [intelligence, setIntelligence] = useState<IntelligenceData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [shared, setShared] = useState(false);
+  const { currencyCode, pairLabel, country } = useCountry();
 
   useEffect(() => {
-    fetch("/api/rates")
+    setLoading(true);
+    fetch(`/api/rates?currency=${currencyCode}`)
       .then((r) => r.json())
       .then((d) => {
         setIntelligence(d);
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [currencyCode]);
 
   const midMarketRate = intelligence?.midMarketRate ?? DEFAULT_MID_MARKET_RATE;
   const stats = intelligence?.stats ?? null;
@@ -171,12 +176,14 @@ export default function HomePage() {
           <div className="max-w-2xl mx-auto mb-3">
             <label className="flex items-center gap-2 text-slate-500 text-xs font-medium mb-1.5 ml-1">
               <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#F0B429]/20 text-[#F0B429] text-[10px] font-bold">1</span>
-              Enter your amount to compare live rates
+              Select your country and enter amount
             </label>
             <div className="relative group shadow-2xl shadow-yellow-500/10 rounded-2xl">
-              <span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xl">AUD</span>
-              <input type="text" aria-label="Enter Amount in AUD to Send to India" value={inputVal} onChange={(e) => handleAmountChange(e.target.value)}
-                className="w-full glass-panel rounded-2xl py-5 flex-1 px-6 pl-20 text-right text-4xl font-extrabold text-slate-900 focus:outline-none focus:border-[#F0B429] focus:ring-4 focus:ring-[#F0B429]/20 transition-all placeholder:text-slate-300" placeholder="2,000" />
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10">
+                <CountrySelector compact />
+              </div>
+              <input type="text" aria-label={`Enter Amount in ${currencyCode} to Send to India`} value={inputVal} onChange={(e) => handleAmountChange(e.target.value)}
+                className="w-full glass-panel rounded-2xl py-5 flex-1 px-6 pl-28 text-right text-4xl font-extrabold text-slate-900 focus:outline-none focus:border-[#F0B429] focus:ring-4 focus:ring-[#F0B429]/20 transition-all placeholder:text-slate-300" placeholder="2,000" />
               <ChevronRight className="absolute right-6 top-1/2 -translate-y-1/2 w-6 h-6 text-[#3A5575] group-focus-within:text-[#F0B429] transition-colors" />
             </div>
           </div>
@@ -231,7 +238,7 @@ export default function HomePage() {
       <section className="mx-auto max-w-6xl px-4 pb-8 z-10 relative">
         <div className="glass-panel rounded-3xl overflow-hidden border border-white/60">
           <div className="px-6 py-4 border-b border-slate-200/60 flex items-center justify-between bg-white/40">
-            <h2 className="text-slate-900 font-bold text-sm">Sending AUD {amount.toLocaleString()} to India</h2>
+            <h2 className="text-slate-900 font-bold text-sm">Sending {currencyCode} {amount.toLocaleString()} to India</h2>
             <p className="text-slate-500 text-xs">Mid-market: &#8377;{midMarketRate.toFixed(2)} | {dataSource === "live" ? "Live rates" : "Updated just now"}</p>
           </div>
           <div className="hidden md:block">
@@ -256,7 +263,7 @@ export default function HomePage() {
                     <td className="px-4 py-2.5 text-right"><p className="text-slate-900 font-bold">&#8377;{formatINR(p.received)}</p></td>
                     <td className="px-4 py-2.5 text-center"><span className="text-slate-500 text-sm">{p.speed}</span></td>
                     <td className="px-4 py-2.5 text-right">{p.savings > 0 ? <p className="text-emerald-400 font-semibold text-sm">+&#8377;{formatINR(p.savings)}</p> : <p className="text-slate-500 text-xs">baseline</p>}</td>
-                    <td className="px-4 py-3"><a href={getAffiliateUrlWithAmount(p.id, p.affiliateUrl, amount, "homepage")} target="_blank" rel="noopener noreferrer sponsored"
+                    <td className="px-4 py-3"><a href={getAffiliateUrlWithAmount(p.id, p.affiliateUrl, amount, "homepage", currencyCode)} target="_blank" rel="noopener noreferrer sponsored"
                       className={`inline-flex items-center justify-center gap-1 px-4 py-2 rounded-xl font-bold text-sm transition-all w-24 ${i === 0 ? "btn-primary" : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:shadow-md hover:-translate-y-0.5"}`}>
                       Send</a></td>
                   </tr>
@@ -279,7 +286,7 @@ export default function HomePage() {
                 <div className="flex items-center justify-between">
                   <div><p className="text-slate-900 font-bold text-lg">&#8377;{formatINR(p.received)}</p>
                     <p className="text-slate-500 text-xs">Rate: &#8377;{p.rate.toFixed(2)} &middot; Fee: {p.fee === 0 ? "Free" : `$${p.fee}`} &middot; {p.speed}</p></div>
-                  <a href={getAffiliateUrlWithAmount(p.id, p.affiliateUrl, amount, "homepage-mobile")} target="_blank" rel="noopener noreferrer sponsored"
+                  <a href={getAffiliateUrlWithAmount(p.id, p.affiliateUrl, amount, "homepage-mobile", currencyCode)} target="_blank" rel="noopener noreferrer sponsored"
                     className={`px-5 py-2.5 rounded-xl font-bold text-sm shadow-sm transition-all ${i === 0 ? "btn-primary" : "bg-white border border-slate-200 text-slate-700"}`}>Send</a>
                 </div>
               </div>
@@ -287,6 +294,28 @@ export default function HomePage() {
           </div>
         </div>
         <p className="text-[#4A6A8A] text-[10px] text-center mt-3 px-4">Affiliate disclosure: RemitIQ may earn a commission if you sign up through some of our links. This does not affect our rankings or editorial independence.</p>
+        {/* Share Comparison Button */}
+        <div className="flex justify-center mt-4">
+          <button
+            onClick={async () => {
+              const best = ranked[0];
+              const url = `https://remitiq.co/?amount=${amount}`;
+              const text = `I just compared rates for sending ${currencyCode} ${amount.toLocaleString()} to India. ${best.name} gives ₹${formatINR(best.received)} — best deal right now!`;
+              try {
+                if (navigator.share) {
+                  await navigator.share({ title: "RemitIQ Rate Comparison", text, url });
+                } else {
+                  await navigator.clipboard.writeText(`${text}\n${url}`);
+                }
+                setShared(true);
+                setTimeout(() => setShared(false), 2500);
+              } catch { /* user cancelled share */ }
+            }}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 hover:shadow-md hover:-translate-y-0.5 transition-all"
+          >
+            {shared ? <><Check className="w-4 h-4 text-emerald-500" /> Copied!</> : <><Share2 className="w-4 h-4" /> Share This Comparison</>}
+          </button>
+        </div>
       </section>
 
       {/* Chart + Rate Intelligence — side by side on desktop */}
@@ -298,7 +327,7 @@ export default function HomePage() {
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <BarChart3 className="w-4 h-4 text-[#F0B429]" />
-                  <h2 className="text-slate-900 font-bold text-sm">AUD/INR &mdash; Last 30 Days</h2>
+                  <h2 className="text-slate-900 font-bold text-sm">{pairLabel} &mdash; Last 30 Days</h2>
                   {dataSource === "live" && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-700">LIVE</span>}
                 </div>
                 <div className="flex gap-4 text-xs">
@@ -405,7 +434,7 @@ export default function HomePage() {
           ))}
         </div>
         <div className="text-slate-500 text-xs leading-relaxed text-center max-w-3xl mx-auto space-y-2">
-          <p>Every year, Indians in Australia send over $7.3 billion home. The difference between the best and worst deal on a $2,000 AUD to INR transfer can exceed &#8377;3,000. RemitIQ compares live remittance rates and uses AI to help you find the cheapest way to send money to India — no hidden fees, no conflicts of interest.</p>
+          <p>Every year, millions of Indians abroad send money home. The difference between the best and worst deal on a typical transfer can exceed &#8377;3,000. RemitIQ compares live remittance rates and uses AI to help you find the cheapest way to send money to India — no hidden fees, no conflicts of interest.</p>
         </div>
       </section>
     </div>

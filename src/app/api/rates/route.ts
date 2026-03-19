@@ -1,80 +1,60 @@
-import { NextResponse } from "next/server";
-import { getCachedIntelligence, isIntelligenceFresh, getRecentRates, getLatestRate, cacheIntelligence, getRateCount, getProviderConfigs } from "@/lib/db";
-import { getIntelligenceAsync, computeIntelligenceFromRates } from "@/lib/intelligence";
+import { NextRequest, NextResponse } from "next/server";
+import { getProviderConfigs } from "@/lib/db";
+import { getIntelligenceAsync } from "@/lib/intelligence";
 import { getPlatforms, getRankedPlatforms } from "@/data/platforms";
 
 export const revalidate = 300; // ISR: revalidate every 5 minutes
 
-export async function GET() {
+// In-memory cache for provider configs — DB query only needed once per process lifetime
+// Circuit breaker: after a failure, skip DB for 5 min so warm requests don't pay 500ms timeout
+let cachedProviderConfigs: Awaited<ReturnType<typeof getProviderConfigs>> | null = null;
+let configsCachedAt = 0;
+let configsLastFailedAt = 0;
+const CONFIGS_TTL_MS = 60 * 60 * 1000; // 1 hour
+const CONFIGS_RETRY_AFTER_MS = 5 * 60 * 1000; // retry DB after 5 min following a failure
+
+async function getProviderConfigsCached(): Promise<Awaited<ReturnType<typeof getProviderConfigs>>> {
+    // Return memory-cached configs if fresh
+    if (cachedProviderConfigs && Date.now() - configsCachedAt < CONFIGS_TTL_MS) {
+        return cachedProviderConfigs;
+    }
+    // Circuit breaker: skip DB call if it failed recently
+    if (configsLastFailedAt && Date.now() - configsLastFailedAt < CONFIGS_RETRY_AFTER_MS) {
+        return [];
+    }
     try {
-        // ── Try serving from pre-computed cache first ───────────────────────
-        if (await isIntelligenceFresh(24)) {
-            const cached = (await getCachedIntelligence())!;
-            const intel = cached.data as Record<string, unknown>;
-            const midMarketRate = cached.midMarketRate;
-            const providerConfigs = await getProviderConfigs();
-            const platforms = getPlatforms(midMarketRate, 2000, providerConfigs);
-            const ranked = getRankedPlatforms(2000, midMarketRate, providerConfigs);
+        const timeout = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error("provider configs timeout")), 500)
+        );
+        const configs = await Promise.race([getProviderConfigs(), timeout]) as Awaited<ReturnType<typeof getProviderConfigs>>;
+        cachedProviderConfigs = configs;
+        configsCachedAt = Date.now();
+        configsLastFailedAt = 0; // reset circuit breaker on success
+        return configs;
+    } catch {
+        console.warn("[RemitIQ API] Provider configs unavailable, using hardcoded defaults");
+        configsLastFailedAt = Date.now();
+        return cachedProviderConfigs ?? [];
+    }
+}
 
-            console.log("[RemitIQ API] Serving from pre-computed cache (computed at:", cached.computedAt, ")");
+export async function GET(request: NextRequest) {
+    try {
+        const { searchParams } = new URL(request.url);
+        const currency = (searchParams.get("currency") || "AUD").toUpperCase();
 
-            return NextResponse.json({
-                midMarketRate,
-                chartData: intel.chartData,
-                stats: intel.stats,
-                recommendation: intel.recommendation,
-                backtest: intel.backtest,
-                macroEvents: intel.macroEvents,
-                platforms,
-                ranked,
-                providerConfigs,
-                dataSource: "live",
-                lastUpdated: cached.computedAt,
-                source: "db_cache",
-            });
-        }
+        // Fetch intelligence and provider configs in parallel
+        const [intel, providerConfigs] = await Promise.all([
+            getIntelligenceAsync(currency),
+            getProviderConfigsCached(),
+        ]);
 
-        // ── Fallback: try computing from persisted rates ───────────────────
-        const rateCount = await getRateCount();
-        if (rateCount >= 30) {
-            console.log("[RemitIQ API] Cache stale, recomputing from", rateCount, "persisted rates");
+        const midMarketRate = intel.midMarketRate;
+        const refAmount = 2000;
+        const platforms = getPlatforms(midMarketRate, refAmount, providerConfigs);
+        const ranked = getRankedPlatforms(refAmount, midMarketRate, providerConfigs);
 
-            const persistedRates = await getRecentRates(180);
-            const latestRate = await getLatestRate();
-            const midMarketRate = latestRate?.mid_market || 64.10;
-
-            const intel = computeIntelligenceFromRates(persistedRates, midMarketRate);
-
-            // Cache the result for next time
-            await cacheIntelligence(midMarketRate, intel);
-
-            const providerConfigs = await getProviderConfigs();
-            const platforms = getPlatforms(midMarketRate, 2000, providerConfigs);
-            const ranked = getRankedPlatforms(2000, midMarketRate, providerConfigs);
-
-            return NextResponse.json({
-                midMarketRate,
-                chartData: intel.chartData,
-                stats: intel.stats,
-                recommendation: intel.recommendation,
-                backtest: intel.backtest,
-                macroEvents: intel.macroEvents,
-                platforms,
-                ranked,
-                providerConfigs,
-                dataSource: "live",
-                lastUpdated: new Date().toISOString(),
-                source: "db_recomputed",
-            });
-        }
-
-        // ── Last resort: fetch live and seed DB ────────────────────────────
-        console.log("[RemitIQ API] No persisted rates, fetching live and seeding DB");
-
-        const intel = await getIntelligenceAsync();
-        const providerConfigs = await getProviderConfigs();
-        const platforms = getPlatforms(intel.midMarketRate, 2000, providerConfigs);
-        const ranked = getRankedPlatforms(2000, intel.midMarketRate, providerConfigs);
+        console.log(`[RemitIQ API] Serving ${currency} rates (source: ${intel.dataSource})`);
 
         return NextResponse.json({
             midMarketRate: intel.midMarketRate,
@@ -88,7 +68,8 @@ export async function GET() {
             providerConfigs,
             dataSource: intel.dataSource,
             lastUpdated: new Date().toISOString(),
-            source: "api_live",
+            source: intel.dataSource === "cached" ? "db_cache" : "api_live",
+            currency,
         });
     } catch (error) {
         console.error("[RemitIQ API] Error:", error);

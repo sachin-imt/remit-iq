@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { Bell, Check, ChevronRight, Loader2 } from "lucide-react";
+import { useCountry } from "@/components/CountryContext";
 
 export default function AlertsPage() {
   const [email, setEmail] = useState("");
@@ -11,10 +12,11 @@ export default function AlertsPage() {
   const [error, setError] = useState("");
   const [currentRate, setCurrentRate] = useState<number | null>(null);
   const [avgRate, setAvgRate] = useState<number | null>(null);
+  const { pairLabel, currencyCode } = useCountry();
 
   // Fetch live rate data on mount
   useEffect(() => {
-    fetch("/api/rates")
+    fetch(`/api/rates?currency=${currencyCode}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.midMarketRate) {
@@ -28,7 +30,7 @@ export default function AlertsPage() {
         }
       })
       .catch(() => { });
-  }, []);
+  }, [currencyCode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +68,7 @@ export default function AlertsPage() {
         <h1 className="text-3xl font-extrabold text-slate-900 mb-4">Alert Set!</h1>
         <p className="text-slate-500 text-lg mb-2">We&apos;ll notify you at <strong className="text-slate-900">{email}</strong> when:</p>
         <ul className="text-slate-700 space-y-2 mb-8">
-          {(alertType === "rate" || alertType === "both") && <li>AUD/INR rate reaches &#8377;{targetRate}</li>}
+          {(alertType === "rate" || alertType === "both") && <li>{pairLabel} rate reaches &#8377;{targetRate}</li>}
           {(alertType === "platform" || alertType === "both") && <li>A platform offers a significantly better deal</li>}
         </ul>
         <a href="/" className="inline-flex items-center gap-2 bg-[#F0B429] text-slate-900 font-bold px-6 py-3 rounded-xl hover:bg-yellow-400 transition-colors">Compare Rates Now <ChevronRight className="w-4 h-4" /></a>
@@ -78,7 +80,7 @@ export default function AlertsPage() {
     <div className="mx-auto max-w-3xl px-4 py-8">
       <div className="text-center mb-10">
         <Bell className="w-12 h-12 text-[#F0B429] mx-auto mb-4" />
-        <h1 className="text-3xl font-extrabold text-slate-900 mb-2">Free AUD/INR Rate Alerts</h1>
+        <h1 className="text-3xl font-extrabold text-slate-900 mb-2">Free {pairLabel} Rate Alerts</h1>
         <p className="text-slate-500 text-lg">Get notified the moment rates hit your target. Never miss a good time to send money home.</p>
       </div>
       <form onSubmit={handleSubmit} className="bg-slate-50 border border-slate-200 rounded-2xl p-8">
@@ -88,7 +90,7 @@ export default function AlertsPage() {
             className="w-full bg-white border border-slate-200 rounded-xl py-3 px-4 text-slate-900 focus:outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20" />
         </div>
         <div className="mb-6">
-          <label className="block text-slate-900 font-semibold mb-2">Target AUD/INR rate</label>
+          <label className="block text-slate-900 font-semibold mb-2">Target {pairLabel} rate</label>
           <p className="text-slate-500 text-sm mb-2">
             Current best rate: &#8377;{currentRate ?? "..."} | 30-day average: &#8377;{avgRate ?? "..."}
           </p>
@@ -102,7 +104,7 @@ export default function AlertsPage() {
           <label className="block text-slate-900 font-semibold mb-3">What alerts do you want?</label>
           <div className="space-y-3">
             {([
-              { value: "rate" as const, label: "Rate target alerts", desc: "Alert when AUD/INR hits your target rate" },
+              { value: "rate" as const, label: "Rate target alerts", desc: `Alert when ${pairLabel} hits your target rate` },
               { value: "platform" as const, label: "Best deal alerts", desc: "Alert when one platform is significantly cheaper" },
               { value: "both" as const, label: "All alerts (recommended)", desc: "Get both rate target and best deal alerts" },
             ]).map((opt) => (
@@ -131,7 +133,7 @@ export default function AlertsPage() {
       </form>
       <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
-          { title: "Don't miss favorable rates", desc: "AUD/INR can swing 2-3% in a week. On a $5,000 transfer, that's ₹6,000+ difference." },
+          { title: "Don't miss favorable rates", desc: `${pairLabel} can swing 2-3% in a week. On a $5,000 transfer, that's ₹6,000+ difference.` },
           { title: "Beat your bank", desc: "Banks charge 6%+ margins. Our alerts help you find digital platforms charging under 1%." },
           { title: "Timing is everything", desc: "Sending on the right day vs. the wrong day can save you ₹2,000-5,000 on a typical transfer." },
         ].map((item) => (

@@ -6,10 +6,12 @@ export async function POST(request: Request) {
     try {
         const body = await request.json();
         const message: string = body.message || "";
+        const currencyCode: string = body.currencyCode || "AUD";
+        const countryName: string = body.countryName || "Australia";
 
         if (!message.trim()) {
             return NextResponse.json({
-                reply: "Please type a question about AUD/INR rates or remittances!",
+                reply: `Please type a question about ${currencyCode}/INR rates or remittances!`,
                 suggestions: ["What's the current rate?", "What does confidence % mean?", "Which platform is cheapest?"],
             });
         }
@@ -17,7 +19,7 @@ export async function POST(request: Request) {
         // Fetch live rate context for dynamic responses
         let ctx: RateContext | null = null;
         try {
-            const rateRes = await fetch(new URL("/api/rates", request.url).toString());
+            const rateRes = await fetch(new URL(`/api/rates?currency=${currencyCode}`, request.url).toString());
             if (rateRes.ok) {
                 const data = await rateRes.json();
                 ctx = {
@@ -46,7 +48,7 @@ export async function POST(request: Request) {
             // Continue without context — responses will still work
         }
 
-        const response = matchIntent(message, ctx);
+        const response = matchIntent(message, ctx, currencyCode, countryName);
         return NextResponse.json(response);
     } catch (error) {
         console.error("[RemitIQ Chat] Error:", error);

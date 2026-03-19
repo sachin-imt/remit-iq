@@ -9,6 +9,7 @@
  */
 
 import { fetchHistoricalRates, fetchLatestRate } from "./rate-service";
+import { getCachedIntelligence, cacheIntelligence, type DailyRate } from "./db";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -342,30 +343,61 @@ function extractFactors(stats: RateStatistics, data: RateDataPoint[]): SignalFac
 
 // ─── Macro Events ───────────────────────────────────────────────────────────
 
-function getUpcomingMacroEvents(): MacroEvent[] {
+interface CentralBankConfig {
+    name: string;
+    shortName: string;
+    months: number[];    // 0-indexed months when meetings typically occur
+    dayOfWeek?: number;  // 0=Sun..6=Sat; if set, finds first occurrence in month
+    fixedDay?: number;   // fixed day of month (approximate)
+    description: string;
+}
+
+const CENTRAL_BANKS: Record<string, CentralBankConfig> = {
+    AUD: { name: "Reserve Bank of Australia", shortName: "RBA", months: [1,2,3,4,5,7,8,9,10,11], dayOfWeek: 2, description: "RBA monetary policy meeting. Rate decisions directly impact AUD/INR." },
+    USD: { name: "US Federal Reserve", shortName: "Fed", months: [0,2,4,5,6,8,10,11], fixedDay: 15, description: "FOMC interest rate decision. The most influential central bank for global FX markets." },
+    GBP: { name: "Bank of England", shortName: "BoE", months: [1,2,4,5,7,8,10,11], fixedDay: 5, description: "BoE Monetary Policy Committee decision. Directly affects GBP/INR." },
+    EUR: { name: "European Central Bank", shortName: "ECB", months: [0,2,3,5,6,8,9,11], fixedDay: 12, description: "ECB Governing Council rate decision. Impacts EUR/INR and global risk sentiment." },
+    CAD: { name: "Bank of Canada", shortName: "BoC", months: [0,2,3,5,6,8,9,11], fixedDay: 10, description: "Bank of Canada rate decision. Directly impacts CAD/INR." },
+    NZD: { name: "Reserve Bank of New Zealand", shortName: "RBNZ", months: [1,3,4,6,7,9,10], fixedDay: 22, description: "RBNZ Official Cash Rate decision. Directly impacts NZD/INR." },
+    SGD: { name: "Monetary Authority of Singapore", shortName: "MAS", months: [3,9], fixedDay: 14, description: "MAS semi-annual policy statement. Affects SGD/INR band." },
+    AED: { name: "Central Bank of UAE", shortName: "CBUAE", months: [0,2,4,5,6,8,10,11], fixedDay: 16, description: "CBUAE typically follows Fed decisions. AED is pegged to USD, so Fed impacts are indirect." },
+    SAR: { name: "Saudi Central Bank", shortName: "SAMA", months: [0,2,4,5,6,8,10,11], fixedDay: 16, description: "SAMA typically mirrors Fed decisions. SAR is pegged to USD." },
+    MYR: { name: "Bank Negara Malaysia", shortName: "BNM", months: [0,2,4,6,8,10], fixedDay: 8, description: "BNM Monetary Policy Committee decision. Affects MYR/INR." },
+    HKD: { name: "Hong Kong Monetary Authority", shortName: "HKMA", months: [0,2,4,5,6,8,10,11], fixedDay: 16, description: "HKMA follows Fed rate moves due to the USD peg. Impacts HKD/INR indirectly." },
+};
+
+function getUpcomingMacroEvents(sourceCurrency: string = "AUD"): MacroEvent[] {
     const now = new Date();
     const events: MacroEvent[] = [];
+    const horizon = 45 * 86400000; // 45 days lookahead
 
-    // RBA meetings (first Tues of month, except Jan)
-    const rbaMonths = [1, 2, 3, 4, 5, 7, 8, 9, 10, 11];
-    for (const m of rbaMonths) {
-        const d = new Date(now.getFullYear(), m, 1);
-        while (d.getDay() !== 2) d.setDate(d.getDate() + 1);
-        if (d > now && d.getTime() - now.getTime() < 45 * 86400000) {
-            events.push({
-                date: d.toISOString().split("T")[0],
-                event: "RBA Interest Rate Decision",
-                impact: "neutral",
-                description: "Reserve Bank of Australia monetary policy meeting. Rate decisions directly impact AUD/INR.",
-            });
+    // Source currency central bank
+    const sourceBank = CENTRAL_BANKS[sourceCurrency];
+    if (sourceBank) {
+        for (const m of sourceBank.months) {
+            let d: Date;
+            if (sourceBank.dayOfWeek !== undefined) {
+                d = new Date(now.getFullYear(), m, 1);
+                while (d.getDay() !== sourceBank.dayOfWeek) d.setDate(d.getDate() + 1);
+            } else {
+                d = new Date(now.getFullYear(), m, sourceBank.fixedDay || 15);
+            }
+            if (d > now && d.getTime() - now.getTime() < horizon) {
+                events.push({
+                    date: d.toISOString().split("T")[0],
+                    event: `${sourceBank.shortName} Interest Rate Decision`,
+                    impact: "neutral",
+                    description: sourceBank.description,
+                });
+            }
         }
     }
 
-    // RBI meetings (bi-monthly)
+    // RBI meetings (always relevant — INR side)
     const rbiMonths = [1, 3, 5, 7, 9, 11];
     for (const m of rbiMonths) {
         const d = new Date(now.getFullYear(), m, 6);
-        if (d > now && d.getTime() - now.getTime() < 45 * 86400000) {
+        if (d > now && d.getTime() - now.getTime() < horizon) {
             events.push({
                 date: d.toISOString().split("T")[0],
                 event: "RBI Monetary Policy",
@@ -375,14 +407,30 @@ function getUpcomingMacroEvents(): MacroEvent[] {
         }
     }
 
+    // US Fed — always include for non-USD currencies too, since Fed moves affect global FX
+    if (sourceCurrency !== "USD") {
+        const fed = CENTRAL_BANKS.USD;
+        for (const m of fed.months) {
+            const d = new Date(now.getFullYear(), m, fed.fixedDay || 15);
+            if (d > now && d.getTime() - now.getTime() < horizon) {
+                events.push({
+                    date: d.toISOString().split("T")[0],
+                    event: "Fed Interest Rate Decision",
+                    impact: "neutral",
+                    description: "US Fed rate decisions influence all global currencies and risk appetite.",
+                });
+                break; // only show the next one
+            }
+        }
+    }
+
     // Seasonal events
-    const diwaliMonth = 9;
     if (now.getMonth() >= 8 && now.getMonth() <= 10) {
         events.push({
-            date: `${now.getFullYear()}-${diwaliMonth + 1}-15`,
+            date: `${now.getFullYear()}-10-15`,
             event: "Diwali Season",
             impact: "positive",
-            description: "High remittance season — increased demand typically supports better AUD conversion.",
+            description: "High remittance season — increased demand to India typically supports better conversion rates.",
         });
     }
 
@@ -634,31 +682,15 @@ function runBacktest(data: RateDataPoint[]): BacktestResult {
     };
 }
 
-// ─── Public API ─────────────────────────────────────────────────────────────
-
 /**
- * Primary entry point — fetches real data from Wise (or Frankfurter fallback)
- * and returns the complete intelligence payload.
+ * Core intelligence calculator that works with pre-refined RateDataPoint[] objects.
+ * This is used by the live API path and recursive simulations.
  */
-export async function getIntelligenceAsync(): Promise<IntelligenceData> {
-    let dataSource: "live" | "cached" | "fallback" = "live";
-
-    const [historyResult, latestResult] = await Promise.all([
-        fetchHistoricalRates(180),
-        fetchLatestRate(),
-    ]);
-
-    const historicalData = historyResult.data;
-    const midMarketRate = latestResult.rate;
-    const rateSource = latestResult.source;
-
-    // If we got fewer than 30 data points, something went wrong
-    if (historicalData.length < 30) {
-        dataSource = "fallback";
-    } else if (rateSource === "fallback") {
-        dataSource = "fallback";
-    }
-
+export function computeIntelligenceFromRates(
+    historicalData: RateDataPoint[],
+    midMarketRate: number,
+    sourceCurrency: string = "AUD"
+): Omit<IntelligenceData, "dataSource"> {
     const last30 = historicalData.slice(-30);
     const stats = computeStatistics(historicalData);
     const recommendation = generateRecommendation(stats, historicalData);
@@ -670,27 +702,110 @@ export async function getIntelligenceAsync(): Promise<IntelligenceData> {
         stats,
         recommendation,
         backtest,
-        macroEvents: getUpcomingMacroEvents(),
+        macroEvents: getUpcomingMacroEvents(sourceCurrency),
         midMarketRate,
-        dataSource,
         forecast: recommendation.forecast,
     };
+}
+
+
+// ─── In-Memory Intelligence Cache ───────────────────────────────────────────
+// Survives for the lifetime of the Node.js process instance.
+// On Vercel: per-lambda (warm invocations share it, cold starts miss).
+// On local dev: persists across requests until server restart.
+
+const MEM_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+interface MemCacheEntry { data: IntelligenceData; timestamp: number; }
+const memCache = new Map<string, MemCacheEntry>();
+
+// ─── Public API ─────────────────────────────────────────────────────────────
+
+/**
+ * Primary entry point — fetches real data from Wise (or Frankfurter fallback)
+ * and returns the complete intelligence payload for any source currency → INR.
+ */
+export async function getIntelligenceAsync(sourceCurrency: string = "AUD"): Promise<IntelligenceData> {
+    const CACHE_MAX_AGE_HOURS = 1;
+
+    // 0. Check in-memory cache first — avoids all network round-trips on warm instances
+    const memEntry = memCache.get(sourceCurrency);
+    if (memEntry && Date.now() - memEntry.timestamp < MEM_CACHE_TTL_MS) {
+        console.log(`[Intelligence] Serving ${sourceCurrency} from memory cache`);
+        return memEntry.data;
+    }
+
+    // 1. Try DB cache first (with timeout guard — Neon cold starts can stall; don't block UX)
+    try {
+        const cachePromise = getCachedIntelligence(sourceCurrency);
+        const dbTimeout = new Promise<null>((_, reject) =>
+            setTimeout(() => reject(new Error("DB cache timeout")), 2000)
+        );
+        const cached = await Promise.race([cachePromise, dbTimeout]) as Awaited<typeof cachePromise> | null;
+        if (cached) {
+            const computedAt = new Date(cached.computedAt);
+            const ageMs = Date.now() - computedAt.getTime();
+            if (ageMs < CACHE_MAX_AGE_HOURS * 3600000) {
+                console.log(`[Intelligence] Serving ${sourceCurrency} from DB cache`);
+                const result: IntelligenceData = {
+                    ...(cached.data as unknown as IntelligenceData),
+                    dataSource: "cached"
+                };
+                // Warm the memory cache so subsequent requests skip DB entirely
+                memCache.set(sourceCurrency, { data: result, timestamp: Date.now() });
+                return result;
+            }
+        }
+    } catch (dbErr) {
+        // DB unavailable (local dev / network issue) — skip cache, go live
+        console.warn(`[Intelligence] DB cache unavailable for ${sourceCurrency}, fetching live:`, (dbErr as Error).message);
+    }
+
+    // 2. Fetch live 90-day history for the specific currency (sufficient for all indicators;
+    //    90d is ~2x faster than 180d from Frankfurter and covers RSI14/MACD26/90d percentile)
+    console.log(`[Intelligence] Fetching live data for ${sourceCurrency}`);
+    const [historyResult, latestResult] = await Promise.all([
+        fetchHistoricalRates(90, sourceCurrency),
+        fetchLatestRate(sourceCurrency),
+    ]);
+
+    const historicalData = historyResult.data;
+    const midMarketRate = latestResult.rate;
+    let dataSource: "live" | "cached" | "fallback" = "live";
+
+    if (historicalData.length < 30) {
+        dataSource = "fallback";
+    }
+
+    const intelligence = computeIntelligenceFromRates(historicalData, midMarketRate, sourceCurrency);
+    const fullIntel: IntelligenceData = {
+        ...intelligence,
+        dataSource,
+    };
+
+    // 3. Store in memory cache (instant on next warm request)
+    memCache.set(sourceCurrency, { data: fullIntel, timestamp: Date.now() });
+
+    // 4. Best-effort DB cache (don't fail the request if DB is down)
+    cacheIntelligence(midMarketRate, fullIntel, sourceCurrency).catch((err) => {
+        console.warn(`[Intelligence] DB cache write skipped for ${sourceCurrency}:`, (err as Error).message);
+    });
+
+    return fullIntel;
 }
 
 
 
 // ─── Persistence-backed Intelligence ────────────────────────────────────────
 
-import type { DailyRate } from "./db";
-
 /**
- * Compute intelligence from persisted DailyRate[] records (from SQLite).
+ * Compute intelligence from persisted DailyRate[] records (from the database).
  * This is the production path — cron fetches rates, persists them,
  * then calls this function to pre-compute intelligence.
  */
-export function computeIntelligenceFromRates(
+export function computeIntelligenceFromDbRates(
     persistedRates: DailyRate[],
-    currentMidMarket: number
+    currentMidMarket: number,
+    sourceCurrency: string = "AUD"
 ): Omit<IntelligenceData, "dataSource"> {
     // Convert DailyRate[] → RateDataPoint[]
     const historicalData: RateDataPoint[] = persistedRates.map((r) => {
@@ -714,7 +829,7 @@ export function computeIntelligenceFromRates(
         stats,
         recommendation,
         backtest,
-        macroEvents: getUpcomingMacroEvents(),
+        macroEvents: getUpcomingMacroEvents(sourceCurrency),
         midMarketRate: currentMidMarket,
         forecast: recommendation.forecast,
     };

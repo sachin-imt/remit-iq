@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getAllPosts } from "@/lib/mdx";
+import { getAllCorridorSlugs } from "@/data/corridors";
 
 export default function sitemap(): MetadataRoute.Sitemap {
     const baseUrl = "https://remitiq.co";
@@ -22,5 +23,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
         priority: 0.7,
     }));
 
-    return [...staticRoutes, ...blogRoutes];
+    // Programmatic corridor pages (pSEO)
+    const corridorRoutes: MetadataRoute.Sitemap = getAllCorridorSlugs().map((slug) => ({
+        url: `${baseUrl}/send-money-to-india-from/${slug}`,
+        lastModified: new Date(),
+        changeFrequency: "daily" as const,
+        priority: 0.9,
+    }));
+
+    return [...staticRoutes, ...corridorRoutes, ...blogRoutes];
 }

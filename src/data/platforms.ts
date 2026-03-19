@@ -128,32 +128,43 @@ export function getRankedPlatforms(
 }
 
 /**
- * Dynamically constructs affiliate URLs with transfer amount and tracking.
+ * Dynamically constructs affiliate URLs with transfer amount, currency, and tracking.
  * 
  * For Wise (via Partnerize): builds a deeplink through the Partnerize tracker
  *   Format: {baseTrackingLink}/pubref:{placement}/destination:{encodedDeeplink}
  * For other providers: appends query params to their direct URLs.
  */
+
+// Map currency codes to Wise/Remitly country path segments
+const CURRENCY_TO_COUNTRY_PATH: Record<string, string> = {
+    AUD: "au", USD: "us", GBP: "gb", EUR: "de", CAD: "ca",
+    NZD: "nz", SGD: "sg", AED: "ae", SAR: "sa", MYR: "my",
+    HKD: "hk", KWD: "kw", QAR: "qa",
+};
+
 export function getAffiliateUrlWithAmount(
   platformId: string,
   baseUrl: string,
   amount: number,
-  pubref: string = "compare"
+  pubref: string = "compare",
+  sourceCurrency: string = "AUD"
 ): string {
   try {
+    const countryPath = CURRENCY_TO_COUNTRY_PATH[sourceCurrency] || "au";
+    
     if (platformId === "wise" || platformId === "instarem") {
       // Partnerize-style deeplinking
       let destination = "";
       
       if (platformId === "wise") {
-        const deeplink = new URL("https://wise.com/au/send-money/send-money-to-india");
-        deeplink.searchParams.set("sourceCurrency", "AUD");
+        const deeplink = new URL(`https://wise.com/${countryPath}/send-money/send-money-to-india`);
+        deeplink.searchParams.set("sourceCurrency", sourceCurrency);
         deeplink.searchParams.set("targetCurrency", "INR");
         deeplink.searchParams.set("sourceAmount", amount.toString());
         destination = deeplink.toString();
       } else if (platformId === "instarem") {
-        // Instarem landing page (AUD -> INR)
-        destination = "https://www.instarem.com/en-au/send-money/au-to-in";
+        const instaremPath = countryPath === "au" ? "en-au" : countryPath === "sg" ? "en-sg" : countryPath === "us" ? "en-us" : `en-${countryPath}`;
+        destination = `https://www.instarem.com/${instaremPath}/send-money/${countryPath}-to-in`;
       }
 
       const encodedDestination = encodeURIComponent(destination);
@@ -165,15 +176,20 @@ export function getAffiliateUrlWithAmount(
 
     switch (platformId) {
       case "remitly":
-        url.searchParams.set("amount", amount.toString());
+        // Remitly uses /{country}/en/india format
+        try {
+          const remitlyUrl = new URL(`https://www.remitly.com/${countryPath}/en/india`);
+          remitlyUrl.searchParams.set("amount", amount.toString());
+          return remitlyUrl.toString();
+        } catch {
+          url.searchParams.set("amount", amount.toString());
+        }
         break;
       case "wu":
         url.searchParams.set("SendAmount", amount.toString());
         url.searchParams.set("ReceiveCountry", "IN");
         url.searchParams.set("ISOCurrency", "INR");
-        break;
-      case "instarem":
-        // Fallback or old tracking link - no amount support
+        url.searchParams.set("SendCurrency", sourceCurrency);
         break;
       default:
         url.searchParams.set("amount", amount.toString());
@@ -185,3 +201,4 @@ export function getAffiliateUrlWithAmount(
     return baseUrl;
   }
 }
+

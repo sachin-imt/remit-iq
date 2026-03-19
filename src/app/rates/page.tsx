@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { TrendingUp, ArrowDown, ArrowUp, Bell, BarChart3, Loader2 } from "lucide-react";
+import { useCountry } from "@/components/CountryContext";
 
 interface SignalFactor {
   name: string;
@@ -75,22 +76,24 @@ interface IntelligenceData {
 export default function RatesPage() {
   const [intel, setIntel] = useState<IntelligenceData | null>(null);
   const [loading, setLoading] = useState(true);
+  const { pairLabel, currencyCode } = useCountry();
 
   useEffect(() => {
-    fetch("/api/rates")
+    setLoading(true);
+    fetch(`/api/rates?currency=${currencyCode}`)
       .then((r) => r.json())
       .then((data) => {
         setIntel(data);
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [currencyCode]);
 
   if (loading) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-24 text-center">
         <Loader2 className="w-8 h-8 text-[#F0B429] animate-spin mx-auto mb-4" />
-        <p className="text-slate-500">Loading real-time AUD/INR rate data...</p>
+        <p className="text-slate-500">Loading real-time {pairLabel} rate data...</p>
       </div>
     );
   }
@@ -116,17 +119,17 @@ export default function RatesPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-extrabold text-slate-900 mb-2">AUD to INR Exchange Rate Today</h1>
+        <h1 className="text-3xl font-extrabold text-slate-900 mb-2">{currencyCode} to INR Exchange Rate Today</h1>
         <div className="flex items-center gap-2">
           <p className="text-slate-500">Live rate tracking with 30-day history and AI-powered timing recommendations</p>
           {dataSource === "live" && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">LIVE</span>}
         </div>
-        <p className="text-slate-500 text-xs mt-2">Data source: European Central Bank &middot; Last updated: {new Date().toLocaleString("en-AU")} AEST</p>
+        <p className="text-slate-500 text-xs mt-2">Data source: European Central Bank &middot; Last updated: {new Date().toLocaleString()} local time</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 md:col-span-2">
-          <p className="text-slate-500 text-sm mb-1">Best available AUD/INR rate</p>
+          <p className="text-slate-500 text-sm mb-1">Best available {pairLabel} rate</p>
           <div className="flex items-end gap-4">
             <p className="text-5xl font-extrabold text-slate-900">&#8377;{stats.current}</p>
             <div className={`flex items-center gap-1 mb-2 ${stats.weekChange >= 0 ? "text-emerald-400" : "text-red-400"}`}>
@@ -148,7 +151,7 @@ export default function RatesPage() {
 
       <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 mb-8">
         <div className="flex items-center gap-2 mb-4">
-          <h2 className="text-slate-900 font-bold text-lg">AUD/INR &mdash; 30-Day Chart</h2>
+          <h2 className="text-slate-900 font-bold text-lg">{pairLabel} &mdash; 30-Day Chart</h2>
           {dataSource === "live" && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">REAL DATA</span>}
         </div>
         <div className="h-80">
@@ -195,20 +198,20 @@ export default function RatesPage() {
           <BarChart3 className="w-5 h-5 text-[#F0B429]" />
           <div><p className="text-slate-900 text-sm font-semibold">Backtest Accuracy: {backtest.accuracy}%</p><p className="text-slate-500 text-xs">Tested over {backtest.totalSignals} signals on 180 days of {dataSource === "live" ? "real" : "historical"} data</p></div>
         </div>
-        <p className="text-slate-500 text-xs mt-4 italic">This is guidance only &mdash; not financial advice. Based on {dataSource === "live" ? "real ECB" : "historical"} AUD/INR data.</p>
+        <p className="text-slate-500 text-xs mt-4 italic">This is guidance only &mdash; not financial advice. Based on {dataSource === "live" ? "real ECB" : "historical"} {pairLabel} data.</p>
       </div>
 
       <div className="bg-gradient-to-r from-[#F0B429]/10 to-[#00B9FF]/10 border border-slate-200 rounded-2xl p-8 text-center">
         <Bell className="w-8 h-8 text-[#F0B429] mx-auto mb-3" />
         <h2 className="text-xl font-bold text-slate-900 mb-2">Don&apos;t miss your target rate</h2>
-        <p className="text-slate-500 mb-4">Set a free rate alert &mdash; we&apos;ll notify you the instant AUD/INR hits your target.</p>
+        <p className="text-slate-500 mb-4">Set a free rate alert &mdash; we&apos;ll notify you the instant {pairLabel} hits your target.</p>
         <a href="/alerts" className="inline-flex items-center gap-2 bg-[#F0B429] text-slate-900 font-bold px-6 py-3 rounded-xl hover:bg-yellow-400 transition-colors">Set Rate Alert &mdash; Free</a>
       </div>
 
       <div className="mt-12 space-y-6">
-        <h2 className="text-xl font-bold text-slate-900">Understanding the AUD to INR Exchange Rate</h2>
+        <h2 className="text-xl font-bold text-slate-900">Understanding the {currencyCode} to INR Exchange Rate</h2>
         <div className="text-slate-500 text-sm leading-relaxed space-y-3">
-          <p>The AUD/INR exchange rate is influenced by RBA interest rate decisions, Australian commodity prices (iron ore, coal), RBI monetary policy, and global risk sentiment. A 1% improvement on a $5,000 transfer translates to approximately &#8377;3,200 more received.</p>
+          <p>The {pairLabel} exchange rate is influenced by central bank interest rate decisions, commodity prices, monetary policy, and global risk sentiment. A 1% improvement on a $5,000 transfer translates to approximately &#8377;3,200 more received.</p>
           <p>RemitIQ tracks the rate across all major remittance platforms &mdash; not just the mid-market rate. The rate you get from platforms like Wise or Remitly includes their FX margin, typically 0.3% to 2% below mid-market.</p>
         </div>
       </div>

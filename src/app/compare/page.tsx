@@ -2,6 +2,8 @@
 import { useState, useMemo, useEffect } from "react";
 import { ArrowUpRight, Star, CheckCircle, Zap, Clock, Loader2 } from "lucide-react";
 import { getRankedPlatforms, formatINR, DEFAULT_MID_MARKET_RATE, getPlatforms, calcReceived, getAffiliateUrlWithAmount } from "@/data/platforms";
+import { useCountry } from "@/components/CountryContext";
+import CountrySelector from "@/components/CountrySelector";
 
 type SortKey = "received" | "rate" | "fee" | "speed" | "stars";
 
@@ -12,9 +14,10 @@ export default function ComparePage() {
   const [midMarketRate, setMidMarketRate] = useState(DEFAULT_MID_MARKET_RATE);
   const [dataSource, setDataSource] = useState<string>("cached");
   const [providerConfigs, setProviderConfigs] = useState<any[] | undefined>(undefined);
+  const { currencyCode, pairLabel } = useCountry();
 
   useEffect(() => {
-    fetch("/api/rates")
+    fetch(`/api/rates?currency=${currencyCode}`)
       .then((r) => r.json())
       .then((data) => {
         if (data.midMarketRate) {
@@ -24,7 +27,7 @@ export default function ComparePage() {
         }
       })
       .catch(() => { });
-  }, []);
+  }, [currencyCode]);
 
   const ranked = useMemo(() => {
     const platforms = getPlatforms(midMarketRate, amount, providerConfigs);
@@ -74,7 +77,7 @@ export default function ComparePage() {
       </div>
       <div className="flex flex-col md:flex-row gap-4 mb-6">
         <div className="flex-1">
-          <label className="block text-slate-500 text-sm mb-1">Send Amount (AUD)</label>
+          <label className="block text-slate-500 text-sm mb-1">Send Amount ({currencyCode})</label>
           <input type="text" value={inputVal} onChange={(e) => handleAmountChange(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-lg font-bold text-slate-900 focus:outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20" />
         </div>
         <div className="md:w-48">
@@ -90,7 +93,7 @@ export default function ComparePage() {
       </div>
       {maxSavings > 0 && (
         <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 mb-6">
-          <p className="text-emerald-400 font-semibold">Save up to &#8377;{formatINR(maxSavings)} by choosing {best.name} over {worst.name} on a ${amount.toLocaleString()} AUD transfer.</p>
+          <p className="text-emerald-400 font-semibold">Save up to &#8377;{formatINR(maxSavings)} by choosing {best.name} over {worst.name} on a {currencyCode} {amount.toLocaleString()} transfer.</p>
         </div>
       )}
       <div className="space-y-4">
@@ -108,12 +111,12 @@ export default function ComparePage() {
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-1">
                 <div><p className="text-slate-500 text-xs">Exchange Rate</p><p className="text-slate-900 font-semibold">&#8377;{p.rate.toFixed(2)}</p><p className="text-slate-500 text-[10px]">{p.marginPct.toFixed(2)}% margin</p></div>
-                <div><p className="text-slate-500 text-xs">Transfer Fee</p><p className={p.fee === 0 ? "text-emerald-400 font-semibold" : "text-slate-900 font-semibold"}>{p.fee === 0 ? "FREE" : `AUD $${p.fee.toFixed(2)}`}</p></div>
+                <div><p className="text-slate-500 text-xs">Transfer Fee</p><p className={p.fee === 0 ? "text-emerald-400 font-semibold" : "text-slate-900 font-semibold"}>{p.fee === 0 ? "FREE" : `${currencyCode} ${p.fee.toFixed(2)}`}</p></div>
                 <div><p className="text-slate-500 text-xs">Delivery Speed</p><p className="text-slate-900 font-semibold">{p.speed}</p></div>
                 <div><p className="text-slate-500 text-xs">You Receive</p><p className="text-slate-900 font-bold text-xl">&#8377;{formatINR(p.received)}</p>{p.savings > 0 && <p className="text-emerald-400 text-xs font-semibold">+&#8377;{formatINR(p.savings)} vs worst</p>}</div>
               </div>
               <div className="md:w-32 flex md:justify-end">
-                <a href={getAffiliateUrlWithAmount(p.id, p.affiliateUrl, amount, "compare")} target="_blank" rel="noopener noreferrer sponsored"
+                <a href={getAffiliateUrlWithAmount(p.id, p.affiliateUrl, amount, "compare", currencyCode)} target="_blank" rel="noopener noreferrer sponsored"
                   className={`inline-flex items-center gap-1.5 px-5 py-3 rounded-xl font-semibold text-sm transition-all w-full md:w-auto justify-center ${i === 0 ? "bg-[#F0B429] text-slate-900 hover:bg-yellow-400 glow-gold" : "bg-slate-100/50 text-slate-700 hover:bg-slate-100"}`}>
                   Send Now <ArrowUpRight className="w-4 h-4" /></a>
               </div>

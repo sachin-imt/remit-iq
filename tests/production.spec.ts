@@ -61,8 +61,8 @@ test.describe('Production E2E Tests', () => {
         // Click floating action button (use aria-label for better stability)
         await page.click('button[aria-label="Open RemitIQ assistant"]');
 
-        // Verify chat header is visible
-        await expect(page.locator('text=RemitIQ Assistant')).toBeVisible();
+        // Verify chat header is visible (actual text is "Ask RemitIQ")
+        await expect(page.locator('text=Ask RemitIQ')).toBeVisible();
     });
 
     test('Static pages load correctly', async ({ page }) => {

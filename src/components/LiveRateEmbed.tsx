@@ -3,15 +3,18 @@
 import { useEffect, useState, useMemo } from "react";
 import { formatINR, getPlatforms, calcReceived, DEFAULT_MID_MARKET_RATE, getAffiliateUrlWithAmount } from "@/data/platforms";
 import { ArrowUpRight, Loader2, Star, Zap } from "lucide-react";
+import { useCountry } from "./CountryContext";
 
 export default function LiveRateEmbed({ providerA, providerB }: { providerA: string, providerB: string }) {
+    const { currencyCode, currencySymbol } = useCountry();
     const amount = 2000; // Fixed template amount for articles
     const [midMarketRate, setMidMarketRate] = useState(DEFAULT_MID_MARKET_RATE);
     const [providerConfigs, setProviderConfigs] = useState<any[] | undefined>(undefined);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch("/api/rates")
+        setLoading(true);
+        fetch(`/api/rates?currency=${currencyCode}`)
             .then((r) => r.json())
             .then((data) => {
                 if (data.midMarketRate) setMidMarketRate(data.midMarketRate);
@@ -19,7 +22,7 @@ export default function LiveRateEmbed({ providerA, providerB }: { providerA: str
                 setLoading(false);
             })
             .catch(() => setLoading(false));
-    }, []);
+    }, [currencyCode]);
 
     const comparison = useMemo(() => {
         const platforms = getPlatforms(midMarketRate, amount, providerConfigs);
@@ -62,7 +65,7 @@ export default function LiveRateEmbed({ providerA, providerB }: { providerA: str
             </div>
 
             <p className="text-slate-500 text-sm mb-6">
-                Right now, sending $2,000 AUD through <strong>{winner.name}</strong> will get you <strong>+₹{formatINR(diff)}</strong> more than {winner.id === pA.id ? pB.name : pA.name}.
+                Right now, sending {currencySymbol}{amount.toLocaleString()} {currencyCode} through <strong>{winner.name}</strong> will get you <strong>+₹{formatINR(diff)}</strong> more than {winner.id === pA.id ? pB.name : pA.name}.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -86,7 +89,7 @@ export default function LiveRateEmbed({ providerA, providerB }: { providerA: str
                             </div>
                             <div className="flex justify-between text-sm">
                                 <span className="text-slate-500">Transfer Fee</span>
-                                <span className={p.fee === 0 ? "text-emerald-400 font-semibold" : "text-slate-900 font-semibold"}>{p.fee === 0 ? "FREE" : `$${p.fee.toFixed(2)}`}</span>
+                                <span className={p.fee === 0 ? "text-emerald-400 font-semibold" : "text-slate-900 font-semibold"}>{p.fee === 0 ? "FREE" : `${currencySymbol}${p.fee.toFixed(2)}`}</span>
                             </div>
                             <div className="flex justify-between text-sm pt-2 border-t border-slate-200/50">
                                 <span className="text-slate-500">Recipient Gets</span>
@@ -94,7 +97,7 @@ export default function LiveRateEmbed({ providerA, providerB }: { providerA: str
                             </div>
                         </div>
 
-                        <a href={getAffiliateUrlWithAmount(p.id, p.affiliateUrl, amount, "blog-embed")} target="_blank" rel="noopener noreferrer sponsored"
+                        <a href={getAffiliateUrlWithAmount(p.id, p.affiliateUrl, amount, "blog-embed", currencyCode)} target="_blank" rel="noopener noreferrer sponsored"
                             className={`w-full inline-flex justify-center items-center gap-1.5 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${p.id === winner.id ? 'bg-[#F0B429] text-slate-900 hover:bg-yellow-400 glow-gold' : 'bg-slate-100/50 text-slate-700 hover:bg-slate-100'}`}>
                             Transfer via {p.name} <ArrowUpRight className="w-4 h-4" />
                         </a>

@@ -17,132 +17,92 @@ import {
     getRecentRates,
     getRateCount,
     cacheIntelligence,
-    getActiveRateAlerts,
-    markAlertTriggered,
 } from "@/lib/db";
 import { computeIntelligenceFromRates } from "@/lib/intelligence";
 import { getPlatforms } from "@/data/platforms";
-import { sendRateAlert } from "@/lib/email";
+import { CORRIDORS } from "@/data/corridors";
 
-export const dynamic = "force-dynamic"; // Never cache this endpoint
-export const maxDuration = 60; // Allow up to 60s (longer for initial 3-year seed)
+export const dynamic = "force-dynamic"; 
+export const maxDuration = 300; // Increased to 5 mins for multi-currency processing
 
 export async function GET(request: Request) {
-    // ── Auth check for production ──────────────────────────────────────────
     const authHeader = request.headers.get("authorization");
     const cronSecret = process.env.CRON_SECRET;
 
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    if (process.env.NODE_ENV === "production" && cronSecret && authHeader !== `Bearer ${cronSecret}`) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const startTime = Date.now();
-    const log: string[] = [];
+    const results: any[] = [];
+    const today = new Date().toISOString().split("T")[0];
 
-    try {
-        // ── Step 1: Seed historical data if DB is sparse ───────────────────
-        const existingCount = await getRateCount();
-        log.push(`Existing rates in DB: ${existingCount}`);
+    // Process each corridor proactively
+    for (const corridor of CORRIDORS) {
+        const currency = corridor.currencyCode;
+        const curStart = Date.now();
+        const stats: any = { currency, status: "pending" };
 
-        if (existingCount < 100) {
-            // First run: seed 3 years of data from Frankfurter for seasonal analysis
-            log.push("DB has < 100 rates, seeding 3 years of historical data...");
-            const longTermResult = await fetchLongTermHistory(3);
-
-            const bulkData = longTermResult.data.map((r) => ({
-                date: r.date,
-                midMarket: r.midMarket,
-                bestRate: r.rate,
-                source: longTermResult.source,
-            }));
-
-            const inserted = await insertDailyRatesBulk(bulkData);
-            log.push(`Seeded ${inserted} historical rates (source: ${longTermResult.source})`);
-        }
-
-        // ── Step 2: Fetch today's latest rate ──────────────────────────────
-        const latestResult = await fetchLatestRate();
-        const latestMidMarket = latestResult.rate;
-        const rateSource = latestResult.source;
-        const today = new Date().toISOString().split("T")[0];
-        const bestRate = parseFloat((latestMidMarket * (1 - 0.0034)).toFixed(2));
-
-        const wasInserted = await insertDailyRate(today, latestMidMarket, bestRate, rateSource);
-        log.push(
-            wasInserted
-                ? `Inserted today's rate: ₹${latestMidMarket} (${today}, source: ${rateSource})`
-                : `Today's rate already exists (${today}), skipped`
-        );
-
-        // ── Step 3: Persist per-platform rates ─────────────────────────────
-        const platforms = getPlatforms(latestMidMarket);
-        const platformRateData = platforms.map((p) => ({
-            platformId: p.id,
-            rate: p.rate,
-            fee: p.fee,
-            marginPct: p.marginPct,
-            source: p.id === "wise" ? "wise_api" : "estimated_margin",
-        }));
-
-        const platformCount = await insertPlatformRates(today, platformRateData);
-        log.push(`Persisted ${platformCount} platform rates for ${today}`);
-
-        // ── Step 4: Compute intelligence from persisted data ───────────────
-        const persistedRates = await getRecentRates(180);
-        log.push(`Computing intelligence from ${persistedRates.length} persisted rates`);
-
-        const intelligence = computeIntelligenceFromRates(persistedRates, latestMidMarket);
-
-        // ── Step 5: Cache the computed intelligence ────────────────────────
-        await cacheIntelligence(latestMidMarket, intelligence);
-        log.push("Intelligence cached successfully");
-
-        // ── Step 6: Check and send rate alerts ─────────────────────────────
-        let alertsTriggered = 0;
-        const matchingAlerts = await getActiveRateAlerts(bestRate);
-        log.push(`Found ${matchingAlerts.length} alerts to trigger (best rate: ₹${bestRate})`);
-
-        for (const alert of matchingAlerts) {
-            const sent = await sendRateAlert({
-                to: alert.email,
-                targetRate: alert.target_rate,
-                currentRate: bestRate,
-                midMarketRate: latestMidMarket,
-            });
-
-            if (sent) {
-                await markAlertTriggered(alert.id, bestRate);
-                alertsTriggered++;
-                log.push(`Alert #${alert.id} triggered → ${alert.email} (target: ₹${alert.target_rate})`);
-            } else {
-                log.push(`Alert #${alert.id} email failed for ${alert.email} (will retry next run)`);
+        try {
+            // 1. Seed history if needed
+            const count = await getRateCount(currency);
+            if (count < 100) {
+                console.log(`[Cron] Seeding history for ${currency}...`);
+                const history = await fetchLongTermHistory(3, currency);
+                await insertDailyRatesBulk(history.data.map(h => ({ 
+                    date: h.date,
+                    midMarket: h.midMarket,
+                    bestRate: h.rate,
+                    currency 
+                })));
+                stats.seeded = history.data.length;
             }
+
+            // 2. Fetch latest rate
+            const latest = await fetchLatestRate(currency);
+            await insertDailyRate(today, latest.rate, latest.rate * (1 - 0.0034), currency, latest.source);
+            stats.rate = latest.rate;
+
+            // 3. Update platform rates
+            const platforms = getPlatforms(latest.rate);
+            const platformData = platforms.map(p => ({
+                platformId: p.id,
+                rate: p.rate,
+                fee: p.fee,
+                marginPct: p.marginPct,
+                source: p.id === "wise" ? "wise_api" : "estimated"
+            }));
+            await insertPlatformRates(today, platformData, currency);
+            stats.platforms = platforms.length;
+
+            // 4. Pre-compute and cache intelligence
+            const recent = await getRecentRates(180, currency);
+            const { computeIntelligenceFromDbRates } = await import("@/lib/intelligence");
+            const intel = computeIntelligenceFromDbRates(recent, latest.rate, currency);
+            
+            // IntelligenceData requires dataSource, but computeIntelligenceFromDbRates returns Omit<IntelligenceData, "dataSource">
+            const fullIntel = { ...intel, dataSource: "live" as const };
+            await cacheIntelligence(latest.rate, fullIntel, currency);
+            
+            stats.signal = intel.recommendation.signal;
+            stats.status = "success";
+        } catch (err) {
+            console.error(`[Cron] Error processing ${currency}:`, err);
+            stats.status = "error";
+            stats.error = String(err);
         }
-
-        const elapsed = Date.now() - startTime;
-        log.push(`Completed in ${elapsed}ms`);
-
-        return NextResponse.json({
-            success: true,
-            midMarketRate: latestMidMarket,
-            rateSource,
-            ratesInDb: await getRateCount(),
-            platformsStored: platformCount,
-            signal: intelligence.recommendation.signal,
-            confidence: intelligence.recommendation.confidence,
-            alertsTriggered,
-            elapsed: `${elapsed}ms`,
-            log,
-        });
-    } catch (error) {
-        console.error("[Cron] Error:", error);
-        return NextResponse.json(
-            {
-                success: false,
-                error: String(error),
-                log,
-            },
-            { status: 500 }
-        );
+        
+        stats.elapsed = `${Date.now() - curStart}ms`;
+        results.push(stats);
     }
+
+    const totalElapsed = Date.now() - startTime;
+
+    return NextResponse.json({
+        success: true,
+        today,
+        processed: results.length,
+        results,
+        totalElapsed: `${totalElapsed}ms`
+    });
 }

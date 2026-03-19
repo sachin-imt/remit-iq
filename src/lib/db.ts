@@ -11,7 +11,7 @@ import { PROVIDER_DEFINITIONS } from "@/data/platforms";
 
 // ─── Database Connection ─────────────────────────────────────────────────────
 
-function getSQL() {
+export function getSQL() {
     const url = process.env.POSTGRES_URL || process.env.DATABASE_URL;
     if (!url) {
         throw new Error("[RemitIQ DB] POSTGRES_URL or DATABASE_URL environment variable is required");
@@ -28,13 +28,23 @@ async function ensureTables(): Promise<void> {
 
     await sql`
         CREATE TABLE IF NOT EXISTS daily_rates (
-            date TEXT PRIMARY KEY,
+            date TEXT NOT NULL,
+            currency_code TEXT NOT NULL DEFAULT 'AUD',
             mid_market DOUBLE PRECISION NOT NULL,
             best_rate DOUBLE PRECISION NOT NULL,
             source TEXT NOT NULL DEFAULT 'frankfurter',
-            fetched_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            fetched_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            PRIMARY KEY (date, currency_code)
         )
     `;
+
+    // ── Schema migrations: add currency_code to tables created before multi-currency ──
+    // These are safe no-ops if the column already exists.
+    await sql`ALTER TABLE daily_rates ADD COLUMN IF NOT EXISTS currency_code TEXT NOT NULL DEFAULT 'AUD'`;
+    await sql`ALTER TABLE daily_rates ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'frankfurter'`;
+    await sql`ALTER TABLE daily_rates ADD COLUMN IF NOT EXISTS fetched_at TIMESTAMPTZ DEFAULT NOW()`;
+    // Ensure composite unique index exists (handles ON CONFLICT even if PK is still just date)
+    await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_daily_rates_pk ON daily_rates(date, currency_code)`;
 
     await sql`CREATE INDEX IF NOT EXISTS idx_daily_rates_date ON daily_rates(date DESC)`;
 
@@ -42,22 +52,38 @@ async function ensureTables(): Promise<void> {
         CREATE TABLE IF NOT EXISTS platform_rates (
             date TEXT NOT NULL,
             platform_id TEXT NOT NULL,
+            currency_code TEXT NOT NULL DEFAULT 'AUD',
             rate DOUBLE PRECISION NOT NULL,
             fee DOUBLE PRECISION NOT NULL DEFAULT 0,
             margin_pct DOUBLE PRECISION NOT NULL DEFAULT 0,
             source TEXT NOT NULL DEFAULT 'estimated',
-            PRIMARY KEY (date, platform_id)
+            PRIMARY KEY (date, platform_id, currency_code)
         )
     `;
+
+    await sql`ALTER TABLE platform_rates ADD COLUMN IF NOT EXISTS currency_code TEXT NOT NULL DEFAULT 'AUD'`;
+    await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_platform_rates_pk ON platform_rates(date, platform_id, currency_code)`;
 
     await sql`CREATE INDEX IF NOT EXISTS idx_platform_rates_date ON platform_rates(date DESC, platform_id)`;
 
     await sql`
         CREATE TABLE IF NOT EXISTS intelligence_cache (
-            id INT PRIMARY KEY DEFAULT 1,
+            currency_code TEXT PRIMARY KEY DEFAULT 'AUD',
             computed_at TIMESTAMPTZ NOT NULL,
             mid_market_rate DOUBLE PRECISION NOT NULL,
             data_json TEXT NOT NULL
+        )
+    `;
+
+    // Migration: if intelligence_cache was created with id as PK, add currency_code
+    await sql`ALTER TABLE intelligence_cache ADD COLUMN IF NOT EXISTS currency_code TEXT DEFAULT 'AUD'`;
+    // Deduplicate: keep only the most recently inserted row per currency (cache can be regenerated)
+    await sql`
+        DELETE FROM intelligence_cache
+        WHERE ctid NOT IN (
+            SELECT DISTINCT ON (currency_code) ctid
+            FROM intelligence_cache
+            ORDER BY currency_code, computed_at DESC NULLS LAST
         )
     `;
 
@@ -77,6 +103,7 @@ async function ensureTables(): Promise<void> {
         CREATE TABLE IF NOT EXISTS alerts (
             id SERIAL PRIMARY KEY,
             email TEXT NOT NULL,
+            currency_code TEXT NOT NULL DEFAULT 'AUD',
             target_rate DOUBLE PRECISION NOT NULL,
             alert_type TEXT NOT NULL DEFAULT 'both',
             is_active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -86,6 +113,7 @@ async function ensureTables(): Promise<void> {
         )
     `;
 
+    await sql`ALTER TABLE alerts ADD COLUMN IF NOT EXISTS currency_code TEXT NOT NULL DEFAULT 'AUD'`;
     await sql`CREATE INDEX IF NOT EXISTS idx_alerts_active ON alerts(is_active, target_rate)`;
 
     await sql`
@@ -171,14 +199,15 @@ export async function insertDailyRate(
     date: string,
     midMarket: number,
     bestRate: number,
+    currency: string = "AUD",
     source: string = "frankfurter"
 ): Promise<boolean> {
     await ensureTables();
     const sql = getSQL();
     const result = await sql`
-        INSERT INTO daily_rates (date, mid_market, best_rate, source, fetched_at)
-        VALUES (${date}, ${midMarket}, ${bestRate}, ${source}, NOW())
-        ON CONFLICT (date) DO NOTHING
+        INSERT INTO daily_rates (date, currency_code, mid_market, best_rate, source, fetched_at)
+        VALUES (${date}, ${currency}, ${midMarket}, ${bestRate}, ${source}, NOW())
+        ON CONFLICT DO NOTHING
     `;
     return result.length > 0;
 }
@@ -187,7 +216,7 @@ export async function insertDailyRate(
  * Bulk-insert multiple daily rates (used for seeding historical data).
  */
 export async function insertDailyRatesBulk(
-    rates: Array<{ date: string; midMarket: number; bestRate: number; source?: string }>
+    rates: Array<{ date: string; midMarket: number; bestRate: number; currency?: string; source?: string }>
 ): Promise<number> {
     await ensureTables();
     const sql = getSQL();
@@ -196,9 +225,9 @@ export async function insertDailyRatesBulk(
     for (const r of rates) {
         try {
             await sql`
-                INSERT INTO daily_rates (date, mid_market, best_rate, source, fetched_at)
-                VALUES (${r.date}, ${r.midMarket}, ${r.bestRate}, ${r.source || "frankfurter"}, NOW())
-                ON CONFLICT (date) DO NOTHING
+                INSERT INTO daily_rates (date, currency_code, mid_market, best_rate, source, fetched_at)
+                VALUES (${r.date}, ${r.currency || "AUD"}, ${r.midMarket}, ${r.bestRate}, ${r.source || "frankfurter"}, NOW())
+                ON CONFLICT DO NOTHING
             `;
             inserted++;
         } catch {
@@ -212,12 +241,13 @@ export async function insertDailyRatesBulk(
 /**
  * Get the most recent N days of rates, ordered chronologically (oldest first).
  */
-export async function getRecentRates(days: number = 180): Promise<DailyRate[]> {
+export async function getRecentRates(days: number = 180, currency: string = "AUD"): Promise<DailyRate[]> {
     await ensureTables();
     const sql = getSQL();
     const rows = await sql`
         SELECT date, mid_market, best_rate, source, fetched_at
         FROM daily_rates
+        WHERE currency_code = ${currency}
         ORDER BY date DESC
         LIMIT ${days}
     `;
@@ -227,12 +257,13 @@ export async function getRecentRates(days: number = 180): Promise<DailyRate[]> {
 /**
  * Get the latest rate (most recent date).
  */
-export async function getLatestRate(): Promise<DailyRate | null> {
+export async function getLatestRate(currency: string = "AUD"): Promise<DailyRate | null> {
     await ensureTables();
     const sql = getSQL();
     const rows = await sql`
         SELECT date, mid_market, best_rate, source, fetched_at
         FROM daily_rates
+        WHERE currency_code = ${currency}
         ORDER BY date DESC
         LIMIT 1
     `;
@@ -242,10 +273,12 @@ export async function getLatestRate(): Promise<DailyRate | null> {
 /**
  * Get total count of persisted rates.
  */
-export async function getRateCount(): Promise<number> {
+export async function getRateCount(currency?: string): Promise<number> {
     await ensureTables();
     const sql = getSQL();
-    const rows = await sql`SELECT COUNT(*) as count FROM daily_rates`;
+    const rows = currency 
+        ? await sql`SELECT COUNT(*) as count FROM daily_rates WHERE currency_code = ${currency}`
+        : await sql`SELECT COUNT(*) as count FROM daily_rates`;
     return parseInt(rows[0].count as string);
 }
 
@@ -254,24 +287,22 @@ export async function getRateCount(): Promise<number> {
 /**
  * Cache pre-computed intelligence data (replaces previous cache).
  */
-export async function cacheIntelligence(midMarketRate: number, data: object): Promise<void> {
+export async function cacheIntelligence(midMarketRate: number, data: object, currency: string = "AUD"): Promise<void> {
     await ensureTables();
     const sql = getSQL();
     const dataJson = JSON.stringify(data);
+    // DELETE + INSERT avoids ON CONFLICT constraint dependency — works with any schema.
+    await sql`DELETE FROM intelligence_cache WHERE currency_code = ${currency}`;
     await sql`
-        INSERT INTO intelligence_cache (id, computed_at, mid_market_rate, data_json)
-        VALUES (1, NOW(), ${midMarketRate}, ${dataJson})
-        ON CONFLICT (id) DO UPDATE SET
-            computed_at = NOW(),
-            mid_market_rate = ${midMarketRate},
-            data_json = ${dataJson}
+        INSERT INTO intelligence_cache (currency_code, computed_at, mid_market_rate, data_json)
+        VALUES (${currency}, NOW(), ${midMarketRate}, ${dataJson})
     `;
 }
 
 /**
  * Get cached intelligence. Returns null if no cache exists.
  */
-export async function getCachedIntelligence(): Promise<{
+export async function getCachedIntelligence(currency: string = "AUD"): Promise<{
     computedAt: string;
     midMarketRate: number;
     data: Record<string, unknown>;
@@ -281,7 +312,7 @@ export async function getCachedIntelligence(): Promise<{
     const rows = await sql`
         SELECT computed_at, mid_market_rate, data_json
         FROM intelligence_cache
-        WHERE id = 1
+        WHERE currency_code = ${currency}
     `;
 
     if (rows.length === 0) return null;
@@ -297,8 +328,8 @@ export async function getCachedIntelligence(): Promise<{
 /**
  * Check if the intelligence cache is fresh (less than maxAgeHours old).
  */
-export async function isIntelligenceFresh(maxAgeHours: number = 24): Promise<boolean> {
-    const cached = await getCachedIntelligence();
+export async function isIntelligenceFresh(maxAgeHours: number = 24, currency: string = "AUD"): Promise<boolean> {
+    const cached = await getCachedIntelligence(currency);
     if (!cached) return false;
 
     const computedAt = new Date(cached.computedAt);
@@ -324,7 +355,8 @@ export interface PlatformRate {
  */
 export async function insertPlatformRates(
     date: string,
-    rates: Array<{ platformId: string; rate: number; fee: number; marginPct: number; source: string }>
+    rates: Array<{ platformId: string; rate: number; fee: number; marginPct: number; source: string }>,
+    currency: string = "AUD"
 ): Promise<number> {
     await ensureTables();
     const sql = getSQL();
@@ -332,13 +364,9 @@ export async function insertPlatformRates(
 
     for (const r of rates) {
         await sql`
-            INSERT INTO platform_rates (date, platform_id, rate, fee, margin_pct, source)
-            VALUES (${date}, ${r.platformId}, ${r.rate}, ${r.fee}, ${r.marginPct}, ${r.source})
-            ON CONFLICT (date, platform_id) DO UPDATE SET
-                rate = ${r.rate},
-                fee = ${r.fee},
-                margin_pct = ${r.marginPct},
-                source = ${r.source}
+            INSERT INTO platform_rates (date, platform_id, currency_code, rate, fee, margin_pct, source)
+            VALUES (${date}, ${r.platformId}, ${currency}, ${r.rate}, ${r.fee}, ${r.marginPct}, ${r.source})
+            ON CONFLICT DO NOTHING
         `;
         inserted++;
     }
@@ -347,15 +375,15 @@ export async function insertPlatformRates(
 }
 
 /**
- * Get platform rates for a specific date.
+ * Get platform rates for a specific date and currency.
  */
-export async function getPlatformRatesForDate(date: string): Promise<PlatformRate[]> {
+export async function getPlatformRatesForDate(date: string, currency: string = "AUD"): Promise<PlatformRate[]> {
     await ensureTables();
     const sql = getSQL();
     const rows = await sql`
-        SELECT date, platform_id, rate, fee, margin_pct, source
+        SELECT date, platform_id, currency_code, rate, fee, margin_pct, source
         FROM platform_rates
-        WHERE date = ${date}
+        WHERE date = ${date} AND currency_code = ${currency}
         ORDER BY rate DESC
     `;
     return rows as unknown as PlatformRate[];
@@ -444,13 +472,14 @@ export interface Alert {
 export async function insertAlert(
     email: string,
     targetRate: number,
+    currencyCode: string = "AUD",
     alertType: string = "both"
 ): Promise<number> {
     await ensureTables();
     const sql = getSQL();
     const rows = await sql`
-        INSERT INTO alerts (email, target_rate, alert_type)
-        VALUES (${email}, ${targetRate}, ${alertType})
+        INSERT INTO alerts (email, target_rate, currency_code, alert_type)
+        VALUES (${email}, ${targetRate}, ${currencyCode}, ${alertType})
         RETURNING id
     `;
     return rows[0].id as number;
@@ -459,12 +488,13 @@ export async function insertAlert(
 /**
  * Get all active alerts that should trigger when rate >= target.
  */
-export async function getActiveRateAlerts(currentRate: number): Promise<Alert[]> {
+export async function getActiveRateAlerts(currentRate: number, currency: string = "AUD"): Promise<Alert[]> {
     await ensureTables();
     const sql = getSQL();
     const rows = await sql`
         SELECT * FROM alerts
         WHERE is_active = TRUE
+          AND currency_code = ${currency}
           AND (alert_type = 'rate' OR alert_type = 'both')
           AND target_rate <= ${currentRate}
     `;
@@ -819,7 +849,7 @@ export async function getAnalyticsSummary(period: string = '7d'): Promise<{
 
     // System health
     const latestRate = await sql`SELECT date FROM daily_rates ORDER BY date DESC LIMIT 1`;
-    const intelligence = await sql`SELECT computed_at FROM intelligence_cache WHERE id = 1`;
+    const intelligence = await sql`SELECT computed_at FROM intelligence_cache WHERE currency_code = 'AUD' LIMIT 1`;
     const [providerCount] = await sql`SELECT COUNT(*) as count FROM provider_configs`;
 
     let intelligenceFresh = false;

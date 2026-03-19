@@ -1,6 +1,7 @@
 "use client";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { MessageCircle, X, Send, Bot, User, Loader2, Sparkles } from "lucide-react";
+import { useCountry } from "./CountryContext";
 
 interface Message {
     id: string;
@@ -9,18 +10,22 @@ interface Message {
     suggestions?: string[];
 }
 
-const STARTER_SUGGESTIONS = [
-    "What does confidence % mean?",
-    "What's the current AUD/INR rate?",
-    "Is now a good time to send?",
-    "Which platform is cheapest?",
-];
+
 
 export default function ChatWidget() {
+    const { country, currencyCode } = useCountry();
     const [open, setOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
+    
+    // Dynamic starter suggestions based on context
+    const starterSuggestions = [
+        "What does confidence % mean?",
+        `What's the current ${currencyCode}/INR rate?`,
+        "Should I send money now or wait?",
+        `How much will ₹10,000 cost in ${currencyCode}?`,
+    ];
     const [hasOpened, setHasOpened] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -47,8 +52,13 @@ export default function ChatWidget() {
                 {
                     id: "welcome",
                     role: "bot",
-                    text: "G'day! 👋 I'm the **RemitIQ assistant** — I can help you understand AUD/INR exchange rates, explain our timing signals, and answer questions about sending money from Australia to India.\n\nWhat would you like to know?",
-                    suggestions: STARTER_SUGGESTIONS,
+                    text: `G'day! 👋 I'm the **RemitIQ assistant** — I can help you understand ${currencyCode}/INR exchange rates, explain our timing signals, and answer questions about sending money from ${country} to India.\n\nWhat would you like to know?`,
+                    suggestions: [
+                        "What does confidence % mean?",
+                        `What's the current ${currencyCode}/INR rate?`,
+                        "Is now a good time to send?",
+                        "Which platform is cheapest?",
+                    ],
                 },
             ]);
         }
@@ -66,7 +76,11 @@ export default function ChatWidget() {
             const res = await fetch("/api/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message: text.trim() }),
+                body: JSON.stringify({ 
+                    message: text.trim(),
+                    currencyCode,
+                    countryName: country
+                }),
             });
 
             const data = await res.json();
@@ -228,7 +242,7 @@ export default function ChatWidget() {
                         </div>
                         <div className="flex-1">
                             <h3 className="text-slate-900 font-semibold text-sm">Ask RemitIQ</h3>
-                            <p className="text-slate-500 text-xs">AUD/INR rates & remittance help</p>
+                            <p className="text-slate-500 text-xs">{currencyCode}/INR rates & remittance help</p>
                         </div>
                         <div className="flex items-center gap-1.5">
                             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -308,7 +322,7 @@ export default function ChatWidget() {
                                 type="text"
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
-                                placeholder="Ask about AUD/INR rates..."
+                                placeholder={`Ask about ${currencyCode}/INR rates...`}
                                 disabled={loading}
                                 className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 transition-colors disabled:opacity-50"
                             />

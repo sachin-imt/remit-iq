@@ -37,7 +37,7 @@ export interface ChatResponse {
 
 interface TopicHandler {
     patterns: RegExp[];
-    handler: (ctx: RateContext | null) => ChatResponse;
+    handler: (ctx: RateContext | null, currencyCode: string, countryName: string) => ChatResponse;
 }
 
 // ─── Topic Handlers ─────────────────────────────────────────────────────────
@@ -46,9 +46,9 @@ const topics: TopicHandler[] = [
     // ── GREETING ──
     {
         patterns: [/^(hi|hello|hey|howdy|yo|sup|g'day)/i, /^(good\s*(morning|afternoon|evening))/i],
-        handler: () => ({
-            reply: "G'day! 👋 I'm the RemitIQ assistant — I can help you understand AUD/INR exchange rates, explain our timing signals, and answer questions about sending money from Australia to India.\n\nWhat would you like to know?",
-            suggestions: ["What's the current AUD/INR rate?", "What does confidence % mean?", "Which platform is cheapest?"],
+        handler: (_, currencyCode, countryName) => ({
+            reply: `G'day! 👋 I'm the RemitIQ assistant — I can help you understand ${currencyCode}/INR exchange rates, explain our timing signals, and answer questions about sending money from ${countryName} to India.\n\nWhat would you like to know?`,
+            suggestions: [`What's the current ${currencyCode}/INR rate?`, "What does confidence % mean?", "Which platform is cheapest?"],
         }),
     },
 
@@ -84,16 +84,16 @@ const topics: TopicHandler[] = [
     // ── CURRENT RATE ──
     {
         patterns: [/current.*rate/i, /today.*rate/i, /rate\s*(right\s*)?now/i, /what.*rate/i, /aud.*(inr|rupee)/i, /how much.*rupee/i, /exchange rate/i],
-        handler: (ctx) => ({
+        handler: (ctx, currencyCode) => ({
             reply: ctx
-                ? `**Current AUD/INR rates:**\n\n` +
-                `• Mid-market rate: **₹${ctx.midMarketRate.toFixed(2)}** (ECB)\n` +
-                `• Best platform rate: **₹${ctx.current}** (Wise, 0.34% margin)\n` +
+                ? `**Current ${currencyCode}/INR rates:**\n\n` +
+                `• Mid-market rate: **₹${ctx.midMarketRate.toFixed(2)}**\n` +
+                `• Best platform rate: **₹${ctx.current}**\n` +
                 `• 30-day average: ₹${ctx.avg30d}\n` +
                 `• 30-day range: ₹${ctx.low30d} — ₹${ctx.high30d}\n` +
                 `• This week: ${ctx.weekChange >= 0 ? "+" : ""}₹${ctx.weekChange} (${ctx.weekChangePct >= 0 ? "+" : ""}${ctx.weekChangePct}%)\n\n` +
-                `Data source: European Central Bank (${ctx.dataSource}).`
-                : `I can show you the latest rate — check the homepage or /rates page for real-time data sourced from the European Central Bank.`,
+                `Data source: ECB/Wise (${ctx.dataSource}).`
+                : `I can show you the latest ${currencyCode} rate — check the homepage or /rates page for real-time data.`,
             suggestions: ["Which platform gives the best rate?", "Is now a good time to send?", "What is mid-market rate?"],
         }),
     },
@@ -447,7 +447,7 @@ const OFF_TOPIC_RESPONSE: ChatResponse = {
 };
 
 const FALLBACK_RESPONSE: ChatResponse = {
-    reply: `I'm not sure I understood that! Here are some things I can help with:\n\n• 📈 Today's AUD/INR rate\n• 🏦 Which platform gives you the best deal\n• ⏰ Whether now is a good time to send\n• 💰 Fees and how platforms compare\n• ❓ How our recommendations work`,
+    reply: `I'm not sure I understood that! Here are some things I can help with:\n\n• 📈 Today's exchange rate\n• 🏦 Which platform gives you the best deal\n• ⏰ Whether now is a good time to send\n• 💰 Fees and how platforms compare\n• ❓ How our recommendations work`,
     suggestions: ["What's the current rate?", "Is now a good time to send?", "Which platform is cheapest?", "What checks do you use?"],
 };
 
@@ -459,7 +459,12 @@ const OFF_TOPIC_PATTERNS = [
     /\b(stock|crypto|bitcoin|ethereum|nft|share market)\b/i,
 ];
 
-export function matchIntent(message: string, ctx: RateContext | null): ChatResponse {
+export function matchIntent(
+    message: string, 
+    ctx: RateContext | null, 
+    currencyCode: string = "AUD", 
+    countryName: string = "Australia"
+): ChatResponse {
     const trimmed = message.trim();
 
     // Empty message
@@ -472,10 +477,8 @@ export function matchIntent(message: string, ctx: RateContext | null): ChatRespo
 
     // Match against topics
     for (const topic of topics) {
-        for (const pattern of topic.patterns) {
-            if (pattern.test(trimmed)) {
-                return topic.handler(ctx);
-            }
+        if (topic.patterns.some((p) => p.test(trimmed))) {
+            return topic.handler(ctx, currencyCode, countryName);
         }
     }
 
@@ -483,11 +486,5 @@ export function matchIntent(message: string, ctx: RateContext | null): ChatRespo
     return FALLBACK_RESPONSE;
 }
 
-// ─── Suggested Starters ─────────────────────────────────────────────────────
+// STARTER_SUGGESTIONS are now managed dynamically in ChatWidget.tsx
 
-export const STARTER_SUGGESTIONS = [
-    "What's the current AUD/INR rate?",
-    "What does confidence % mean?",
-    "Is now a good time to send?",
-    "Which platform is cheapest?",
-];
