@@ -3,7 +3,7 @@ import DataManagementForm from "@/components/DataManagementForm";
 
 export const metadata: Metadata = {
     title: "Privacy Policy | RemitIQ",
-    description: "How RemitIQ collects, uses, and protects your personal information. Your rights under the Australian Privacy Act 1988 and GDPR.",
+    description: "How RemitIQ collects, uses, and protects your personal information. Your rights under applicable privacy laws including the Australian Privacy Act 1988, GDPR, and others.",
 };
 
 function Section({ id, title, children }: { id?: string; title: string; children: React.ReactNode }) {
@@ -36,7 +36,7 @@ export default function PrivacyPage() {
 
                 <Section title="1. Data Controller">
                     <p>
-                        RemitIQ (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;) operates the website <strong style={{ color: '#334155' }}>remitiq.co</strong> and is the data controller responsible for your personal information. RemitIQ is based in Australia and primarily serves users sending money from Australia to India.
+                        RemitIQ (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;) operates the website <strong style={{ color: '#334155' }}>remitiq.co</strong> and is the data controller responsible for your personal information. RemitIQ serves users sending money to India from multiple countries including Australia, the United States, the United Kingdom, the United Arab Emirates, Canada, and Singapore.
                     </p>
                     <p>
                         For any privacy-related inquiries, please contact us at <strong style={{ color: "#F0B429" }}>privacy@remitiq.co</strong>.
@@ -105,7 +105,7 @@ export default function PrivacyPage() {
 
                 <Section title="8. International Data Transfers">
                     <p>
-                        RemitIQ is hosted on Vercel, which processes data in the United States. Email delivery via Resend also occurs in the United States. By using our service, you acknowledge that your data may be transferred to and processed in the United States, which may have different data protection standards than Australia or the European Union.
+                        RemitIQ is hosted on Vercel, which processes data in the United States. Email delivery via Resend also occurs in the United States. By using our service, you acknowledge that your data may be transferred to and processed in the United States, which may have different data protection standards than your country of residence or the European Union.
                     </p>
                     <p>
                         We ensure appropriate safeguards are in place by using service providers that comply with industry-standard security practices and, where applicable, Standard Contractual Clauses (SCCs) for GDPR compliance.

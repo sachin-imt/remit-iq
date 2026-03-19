@@ -15,10 +15,11 @@ interface DataTableProps {
   data: Record<string, number>[];
   maxHeight?: string;
   defaultCollapsed?: boolean;
+  currencySymbol?: string; // Defaults to "$"; pass from useCountry() for dynamic currency
 }
 
-const fmt = (n: number) =>
-  "$" + n.toLocaleString("en-US", { maximumFractionDigits: 0 });
+const fmt = (n: number, symbol = "$") =>
+  symbol + n.toLocaleString("en-US", { maximumFractionDigits: 0 });
 
 export default function DataTable({
   title,
@@ -26,6 +27,7 @@ export default function DataTable({
   data,
   maxHeight = "400px",
   defaultCollapsed = true,
+  currencySymbol = "$",
 }: DataTableProps) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
 
@@ -73,7 +75,7 @@ export default function DataTable({
                     <td key={col.key} className="text-slate-900 text-xs px-4 py-2.5">
                       {col.format
                         ? col.format(row[col.key])
-                        : fmt(row[col.key])}
+                        : fmt(row[col.key], currencySymbol)}
                     </td>
                   ))}
                 </tr>

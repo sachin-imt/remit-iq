@@ -5,8 +5,10 @@ import { PiggyBank, ArrowRight, Info, CheckCircle2, TrendingUp, AlertTriangle } 
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import Link from "next/link";
 import CalculatorLayout from "@/components/calculators/CalculatorLayout";
+import { useCountry } from "@/components/CountryContext";
 
 export default function RetirementPlannerPage() {
+    const { currencySymbol } = useCountry();
     const [currentAge, setCurrentAge] = useState(30);
     const [retirementAge, setRetirementAge] = useState(65);
     const [currentSavings, setCurrentSavings] = useState(15000);
@@ -73,6 +75,7 @@ export default function RetirementPlannerPage() {
     };
 
     return (
+        <CalculatorLayout calculatorSlug="retirement">
         <div className="min-h-screen pb-20">
             {/* Header */}
             <section className="relative overflow-hidden pt-10 pb-6 border-b border-slate-200 bg-slate-50">
@@ -140,10 +143,10 @@ export default function RetirementPlannerPage() {
                             <div className="mb-6">
                                 <div className="flex justify-between items-center mb-2">
                                     <label className="text-slate-500 text-sm font-medium">Current Savings</label>
-                                    <span className="text-slate-900 font-bold">${currentSavings.toLocaleString()}</span>
+                                    <span className="text-slate-900 font-bold">{currencySymbol}{currentSavings.toLocaleString()}</span>
                                 </div>
                                 <div className="relative">
-                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">$</span>
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">{currencySymbol}</span>
                                     <input
                                         type="number"
                                         value={currentSavings || ""}
@@ -164,10 +167,10 @@ export default function RetirementPlannerPage() {
                             <div className="mb-6">
                                 <div className="flex justify-between items-center mb-2">
                                     <label className="text-slate-500 text-sm font-medium">Monthly Savings</label>
-                                    <span className="text-slate-900 font-bold">${monthlyContribution.toLocaleString()}</span>
+                                    <span className="text-slate-900 font-bold">{currencySymbol}{monthlyContribution.toLocaleString()}</span>
                                 </div>
                                 <div className="relative">
-                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">$</span>
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">{currencySymbol}</span>
                                     <input
                                         type="number"
                                         value={monthlyContribution || ""}
@@ -273,7 +276,7 @@ export default function RetirementPlannerPage() {
                                 <div className="relative z-10 flex flex-col justify-center h-full">
                                     <p className="text-slate-500 text-sm font-bold uppercase tracking-widest mb-2">Total Savings at Age {retirementAge}</p>
                                     <p className="text-5xl font-extrabold text-slate-900">
-                                        ${finalBalance > 0 ? finalBalance.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : "0"}
+                                        {currencySymbol}{finalBalance > 0 ? finalBalance.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : "0"}
                                     </p>
                                     <p className="text-slate-500 text-xs mt-3">
                                         Your estimated nest egg when you retire.
@@ -286,7 +289,7 @@ export default function RetirementPlannerPage() {
                                 <div className="relative z-10 flex flex-col justify-center h-full">
                                     <p className="text-slate-500 text-sm font-bold uppercase tracking-widest mb-2">Est. Monthly Income</p>
                                     <p className="text-4xl font-extrabold text-emerald-400">
-                                        ${monthlyIncome > 0 ? monthlyIncome.toLocaleString(undefined, { maximumFractionDigits: 0 }) : "0"} / mo
+                                        {currencySymbol}{monthlyIncome > 0 ? monthlyIncome.toLocaleString(undefined, { maximumFractionDigits: 0 }) : "0"} / mo
                                     </p>
                                     <p className="text-slate-500 text-xs mt-3">
                                         Based on withdrawing {withdrawalRate}% of your portfolio per year.
@@ -326,14 +329,14 @@ export default function RetirementPlannerPage() {
                                                 axisLine={false}
                                                 tickLine={false}
                                                 width={65}
-                                                tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
+                                                tickFormatter={(v) => `${currencySymbol}${(v / 1000).toFixed(0)}k`}
                                             />
                                             <Tooltip
                                                 contentStyle={{ background: "#FFFFFF", boxShadow: "0 4px 20px rgba(0,0,0,0.08)", border: '1px solid #E2E8F0', borderRadius: '8px' }}
                                                 itemStyle={{ color: "#0F172A", fontWeight: 600 }}
                                                 labelStyle={{ color: '#64748B', marginBottom: '8px' }}
                                                 formatter={(value: number, name: string) => {
-                                                    const valStr = `$${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+                                                    const valStr = `${currencySymbol}${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
                                                     return name === 'balance' ? [valStr, 'Total Balance'] : [valStr, 'Your Contributions'];
                                                 }}
                                                 labelFormatter={(label) => `At Age ${label}`}
@@ -367,5 +370,6 @@ export default function RetirementPlannerPage() {
                 </div>
             </section>
         </div>
+        </CalculatorLayout>
     );
 }

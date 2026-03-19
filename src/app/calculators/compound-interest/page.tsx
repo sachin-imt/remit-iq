@@ -5,6 +5,7 @@ import { BarChart3, ArrowRight, Info, CheckCircle2 } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import Link from "next/link";
 import CalculatorLayout from "@/components/calculators/CalculatorLayout";
+import { useCountry } from "@/components/CountryContext";
 import DataTable from "@/components/calculators/DataTable";
 
 const freqOptions = [
@@ -15,6 +16,7 @@ const freqOptions = [
 ];
 
 export default function CompoundInterestPage() {
+    const { currencySymbol } = useCountry();
     const [initialInvestment, setInitialInvestment] = useState(10000);
     const [monthlyContribution, setMonthlyContribution] = useState(500);
     const [years, setYears] = useState(20);
@@ -130,10 +132,10 @@ export default function CompoundInterestPage() {
                                 <div className="mb-6">
                                     <div className="flex justify-between items-center mb-2">
                                         <label className="text-slate-500 text-sm font-medium">Initial Investment</label>
-                                        <span className="text-slate-900 font-bold">${initialInvestment.toLocaleString()}</span>
+                                        <span className="text-slate-900 font-bold">{currencySymbol}{initialInvestment.toLocaleString()}</span>
                                     </div>
                                     <div className="relative">
-                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">$</span>
+                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">{currencySymbol}</span>
                                         <input
                                             type="number"
                                             value={initialInvestment || ""}
@@ -154,10 +156,10 @@ export default function CompoundInterestPage() {
                                 <div className="mb-6">
                                     <div className="flex justify-between items-center mb-2">
                                         <label className="text-slate-500 text-sm font-medium">Monthly Contribution</label>
-                                        <span className="text-slate-900 font-bold">${monthlyContribution.toLocaleString()}</span>
+                                        <span className="text-slate-900 font-bold">{currencySymbol}{monthlyContribution.toLocaleString()}</span>
                                     </div>
                                     <div className="relative">
-                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">$</span>
+                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">{currencySymbol}</span>
                                         <input
                                             type="number"
                                             value={monthlyContribution || ""}
@@ -262,7 +264,7 @@ export default function CompoundInterestPage() {
                                         <div>
                                             <p className="text-slate-500 text-sm font-bold uppercase tracking-widest mb-2">Future Balance</p>
                                             <p className="text-5xl font-extrabold text-slate-900">
-                                                ${finalBalance > 0 ? finalBalance.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : "0"}
+                                                {currencySymbol}{finalBalance > 0 ? finalBalance.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : "0"}
                                             </p>
                                         </div>
                                         <div className="text-left md:text-right">
@@ -276,10 +278,10 @@ export default function CompoundInterestPage() {
                                     <div className="glass-panel border-white/60 rounded-2xl p-5">
                                         <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-2">Total Principal</p>
                                         <p className="text-2xl font-bold text-slate-900">
-                                            ${totalPrincipal > 0 ? totalPrincipal.toLocaleString(undefined, { maximumFractionDigits: 0 }) : "0"}
+                                            {currencySymbol}{totalPrincipal > 0 ? totalPrincipal.toLocaleString(undefined, { maximumFractionDigits: 0 }) : "0"}
                                         </p>
                                         <p className="text-slate-500 text-[10px] mt-1 text-opacity-70">
-                                            Your initial ${initialInvestment.toLocaleString()} + contributions
+                                            Your initial {currencySymbol}{initialInvestment.toLocaleString()} + contributions
                                         </p>
                                     </div>
                                     <div className="glass-panel border-white/60 rounded-2xl p-5">
@@ -329,7 +331,7 @@ export default function CompoundInterestPage() {
                                                     axisLine={false}
                                                     tickLine={false}
                                                     width={65}
-                                                    tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
+                                                    tickFormatter={(v) => `${currencySymbol}${(v / 1000).toFixed(0)}k`}
                                                 />
                                                 <Tooltip
                                                     contentStyle={{ background: "#FFFFFF", border: '1px solid #E2E8F0', borderRadius: '8px', boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }}
@@ -337,7 +339,7 @@ export default function CompoundInterestPage() {
                                                     labelStyle={{ color: '#64748B', marginBottom: '8px' }}
                                                     formatter={(value: number, name: string) => {
                                                         const label = name === 'interest' ? 'Compound Interest' : 'Total Principal';
-                                                        return [`$${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`, label];
+                                                        return [`${currencySymbol}${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`, label];
                                                     }}
                                                     labelFormatter={(label) => `Year ${label}`}
                                                 />
@@ -371,6 +373,7 @@ export default function CompoundInterestPage() {
                                 columns={tableColumns}
                                 data={tableData}
                                 defaultCollapsed={true}
+                                currencySymbol={currencySymbol}
                             />
 
                             {/* Information Tips */}

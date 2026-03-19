@@ -5,8 +5,10 @@ import { Home, ArrowRight, Info, PieChart as PieChartIcon, AlertTriangle } from 
 import { AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import Link from "next/link";
 import CalculatorLayout from "@/components/calculators/CalculatorLayout";
+import { useCountry } from "@/components/CountryContext";
 
 export default function MortgageCalculatorPage() {
+    const { currencySymbol } = useCountry();
     const [homeValue, setHomeValue] = useState(400000);
     const [downPayment, setDownPayment] = useState(80000);
     const [years, setYears] = useState(30);
@@ -112,10 +114,10 @@ export default function MortgageCalculatorPage() {
                                 <div className="mb-6">
                                     <div className="flex justify-between items-center mb-2">
                                         <label className="text-slate-500 text-sm font-medium">Home Value</label>
-                                        <span className="text-slate-900 font-bold">${homeValue.toLocaleString()}</span>
+                                        <span className="text-slate-900 font-bold">{currencySymbol}{homeValue.toLocaleString()}</span>
                                     </div>
                                     <div className="relative">
-                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">$</span>
+                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">{currencySymbol}</span>
                                         <input type="number" value={homeValue || ""} onChange={(e) => setHomeValue(Number(e.target.value))}
                                             className="w-full bg-white/60 backdrop-blur-sm border border-slate-200 shadow-sm rounded-xl py-3 px-4 pl-8 text-slate-900 font-semibold focus:outline-none focus:border-[#F0B429] focus:bg-white focus:ring-2 focus:ring-[#F0B429]/20 transition-all" />
                                     </div>
@@ -128,10 +130,10 @@ export default function MortgageCalculatorPage() {
                                 <div className="mb-6">
                                     <div className="flex justify-between items-center mb-2">
                                         <label className="text-slate-500 text-sm font-medium">Down Payment</label>
-                                        <span className="text-slate-900 font-bold">${downPayment.toLocaleString()} ({downPaymentPercent}%)</span>
+                                        <span className="text-slate-900 font-bold">{currencySymbol}{downPayment.toLocaleString()} ({downPaymentPercent}%)</span>
                                     </div>
                                     <div className="relative">
-                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">$</span>
+                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">{currencySymbol}</span>
                                         <input type="number" value={downPayment || ""} onChange={(e) => handleDownPaymentChange(Number(e.target.value))}
                                             className="w-full bg-white/60 backdrop-blur-sm border border-slate-200 rounded-xl py-3 px-4 pl-8 text-slate-900 font-semibold focus:outline-none focus:border-[#F0B429] focus:bg-white focus:ring-2 focus:ring-[#F0B429]/20 transition-all" />
                                     </div>
@@ -140,7 +142,7 @@ export default function MortgageCalculatorPage() {
                                         className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer mt-4 accent-[#F0B429]" />
                                     <div className="mt-3 flex justify-between items-center bg-white/50 backdrop-blur-sm rounded-lg p-3 border border-slate-200/50">
                                         <span className="text-slate-500 text-xs font-medium">Loan Amount</span>
-                                        <span className="text-slate-900 text-sm font-bold">${loanAmount.toLocaleString()}</span>
+                                        <span className="text-slate-900 text-sm font-bold">{currencySymbol}{loanAmount.toLocaleString()}</span>
                                     </div>
                                 </div>
 
@@ -171,7 +173,7 @@ export default function MortgageCalculatorPage() {
                                         <div>
                                             <label className="block text-slate-500 text-xs font-medium mb-2">Property Tax</label>
                                             <div className="relative">
-                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-semibold text-sm">$</span>
+                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-semibold text-sm">{currencySymbol}</span>
                                                 <input type="number" value={propertyTax || ""} onChange={(e) => setPropertyTax(Number(e.target.value))}
                                                     className="w-full bg-white/60 backdrop-blur-sm border border-slate-200 rounded-xl py-2 px-3 pl-7 text-slate-900 font-semibold focus:outline-none focus:border-[#F0B429] focus:bg-white focus:ring-2 focus:ring-[#F0B429]/20 transition-all text-sm" />
                                             </div>
@@ -179,7 +181,7 @@ export default function MortgageCalculatorPage() {
                                         <div>
                                             <label className="block text-slate-500 text-xs font-medium mb-2">Insurance</label>
                                             <div className="relative">
-                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-semibold text-sm">$</span>
+                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-semibold text-sm">{currencySymbol}</span>
                                                 <input type="number" value={homeInsurance || ""} onChange={(e) => setHomeInsurance(Number(e.target.value))}
                                                     className="w-full bg-white/60 backdrop-blur-sm border border-slate-200 rounded-xl py-2 px-3 pl-7 text-slate-900 font-semibold focus:outline-none focus:border-[#F0B429] focus:bg-white focus:ring-2 focus:ring-[#F0B429]/20 transition-all text-sm" />
                                             </div>
@@ -195,7 +197,7 @@ export default function MortgageCalculatorPage() {
                                     <div>
                                         <p className="text-slate-900 text-sm font-semibold mb-1">PMI Required</p>
                                         <p className="text-slate-500 text-xs leading-relaxed">
-                                            Down payment is {downPct.toFixed(1)}% (below 20%). PMI adds ~${Math.round(pmi)}/mo until you reach 20% equity.
+                                            Down payment is {downPct.toFixed(1)}% (below 20%). PMI adds ~{currencySymbol}{Math.round(pmi)}/mo until you reach 20% equity.
                                         </p>
                                     </div>
                                 </div>
@@ -226,7 +228,7 @@ export default function MortgageCalculatorPage() {
                                     <div className="relative z-10 text-center">
                                         <p className="text-slate-500 text-sm font-bold uppercase tracking-widest mb-2">Estimated Monthly Payment</p>
                                         <p className="text-5xl font-extrabold text-slate-900 mb-4">
-                                            ${total > 0 ? total.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : "0"}
+                                            {currencySymbol}{total > 0 ? total.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : "0"}
                                         </p>
                                         <p className="text-emerald-400 text-xs font-semibold bg-emerald-400/10 inline-block px-3 py-1 rounded-full border border-emerald-400/20">
                                             Calculated with {rate}% APR over {years} years
@@ -245,7 +247,7 @@ export default function MortgageCalculatorPage() {
                                                         ))}
                                                     </Pie>
                                                     <Tooltip
-                                                        formatter={(value: number) => `$${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                                                        formatter={(value: number) => `${currencySymbol}${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
                                                         contentStyle={{ background: "#FFFFFF", boxShadow: "0 4px 20px rgba(0,0,0,0.08)", border: '1px solid #E2E8F0', borderRadius: '8px', fontSize: '12px' }}
                                                         itemStyle={{ color: "#0F172A" }}
                                                     />
@@ -264,7 +266,7 @@ export default function MortgageCalculatorPage() {
                                                     <div className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ backgroundColor: item.color }} />
                                                     <span className="text-slate-900 text-xs font-medium truncate">{item.name}</span>
                                                 </div>
-                                                <p className="text-slate-700 text-sm font-bold pl-4">${item.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                                                <p className="text-slate-700 text-sm font-bold pl-4">{currencySymbol}{item.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                                             </div>
                                         ))}
                                     </div>
@@ -290,11 +292,11 @@ export default function MortgageCalculatorPage() {
                                                     </linearGradient>
                                                 </defs>
                                                 <XAxis dataKey="year" tick={{ fill: "#64748B", fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={(v) => `Year ${v}`} />
-                                                <YAxis tick={{ fill: "#64748B", fontSize: 12 }} axisLine={false} tickLine={false} width={60} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+                                                <YAxis tick={{ fill: "#64748B", fontSize: 12 }} axisLine={false} tickLine={false} width={60} tickFormatter={(v) => `${currencySymbol}${(v / 1000).toFixed(0)}k`} />
                                                 <Tooltip
                                                     contentStyle={{ background: "#FFFFFF", boxShadow: "0 4px 20px rgba(0,0,0,0.08)", border: '1px solid #E2E8F0', borderRadius: '8px' }}
                                                     itemStyle={{ color: "#0F172A" }} labelStyle={{ color: '#64748B', marginBottom: '4px' }}
-                                                    formatter={(value: number) => [`$${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`, 'Balance']}
+                                                    formatter={(value: number) => [`${currencySymbol}${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`, 'Balance']}
                                                     labelFormatter={(label) => `Remaining Balance (Year ${label})`}
                                                 />
                                                 <Area type="monotone" dataKey="balance" name="Remaining Balance" stroke="#F0B429" strokeWidth={3} fillOpacity={1} fill="url(#colorMortgage)" />

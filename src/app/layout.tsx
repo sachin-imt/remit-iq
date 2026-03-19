@@ -9,6 +9,7 @@ import FacebookPixel from "@/components/FacebookPixel";
 import { WebSiteSchema } from "@/components/JsonLd";
 import { CountryProvider } from "@/components/CountryContext";
 import { Suspense } from "react";
+import Script from "next/script";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -30,6 +31,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <FacebookPixel />
         </Suspense>
       </head>
+      {/* Google AdSense — loads after page is interactive so it never blocks LCP */}
+      <Script
+        async
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX"
+        crossOrigin="anonymous"
+        strategy="afterInteractive"
+      />
       <body className={`${inter.className} antialiased bg-slate-50 relative overflow-x-hidden`}>
         <CountryProvider>
           {/* Global Mesh Background */}

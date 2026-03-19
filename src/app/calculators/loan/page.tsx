@@ -6,8 +6,10 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "rec
 import Link from "next/link";
 import DataTable from "@/components/calculators/DataTable";
 import CalculatorLayout from "@/components/calculators/CalculatorLayout";
+import { useCountry } from "@/components/CountryContext";
 
 export default function LoanCalculatorPage() {
+    const { currencySymbol } = useCountry();
     const [amount, setAmount] = useState(25000);
     const [rate, setRate] = useState(6.5);
     const [years, setYears] = useState(5);
@@ -111,10 +113,10 @@ export default function LoanCalculatorPage() {
                             <div className="mb-6">
                                 <div className="flex justify-between items-center mb-2">
                                     <label className="text-slate-500 text-sm font-medium">Loan Amount</label>
-                                    <span className="text-slate-900 font-bold">${amount.toLocaleString()}</span>
+                                    <span className="text-slate-900 font-bold">{currencySymbol}{amount.toLocaleString()}</span>
                                 </div>
                                 <div className="relative">
-                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">$</span>
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">{currencySymbol}</span>
                                     <input
                                         type="number"
                                         value={amount || ""}
@@ -205,21 +207,21 @@ export default function LoanCalculatorPage() {
                                 <div className="absolute inset-0 bg-gradient-to-br from-[#00B9FF]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-[-1]" />
                                 <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-2">Monthly Payment</p>
                                 <p className="text-3xl font-extrabold text-slate-900">
-                                    ${monthlyPayment > 0 ? monthlyPayment.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00"}
+                                    {currencySymbol}{monthlyPayment > 0 ? monthlyPayment.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00"}
                                 </p>
                             </div>
                             <div className="glass-panel border-white/60 shadow-lg shadow-slate-200/30 rounded-3xl p-6 relative overflow-hidden group">
                                 <div className="absolute inset-0 bg-gradient-to-br from-[#F43F5E]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-[-1]" />
                                 <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-2">Total Interest</p>
                                 <p className="text-2xl font-bold text-slate-900">
-                                    ${totalInterest > 0 ? totalInterest.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00"}
+                                    {currencySymbol}{totalInterest > 0 ? totalInterest.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00"}
                                 </p>
                             </div>
                             <div className="glass-panel border-white/60 shadow-lg shadow-slate-200/30 rounded-3xl p-6 relative overflow-hidden group">
                                 <div className="absolute inset-0 bg-gradient-to-br from-[#10B981]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-[-1]" />
                                 <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-2">Total Paid</p>
                                 <p className="text-2xl font-bold text-slate-900">
-                                    ${totalPayment > 0 ? totalPayment.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00"}
+                                    {currencySymbol}{totalPayment > 0 ? totalPayment.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00"}
                                 </p>
                             </div>
                         </div>
@@ -259,13 +261,13 @@ export default function LoanCalculatorPage() {
                                                 axisLine={false}
                                                 tickLine={false}
                                                 width={60}
-                                                tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
+                                                tickFormatter={(v) => `${currencySymbol}${(v / 1000).toFixed(0)}k`}
                                             />
                                             <Tooltip
                                                 contentStyle={{ background: "#FFFFFF", boxShadow: "0 4px 20px rgba(0,0,0,0.08)", border: '1px solid #E2E8F0', borderRadius: '8px' }}
                                                 itemStyle={{ color: "#0F172A" }}
                                                 labelStyle={{ color: '#64748B', marginBottom: '4px' }}
-                                                formatter={(value: number) => [`$${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`, '']}
+                                                formatter={(value: number) => [`${currencySymbol}${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`, '']}
                                                 labelFormatter={(label) => `Year ${label}`}
                                             />
                                             <Area type="monotone" dataKey="balance" name="Remaining Balance" stroke="#00B9FF" strokeWidth={3} fillOpacity={1} fill="url(#colorBalance)" />
@@ -308,6 +310,7 @@ export default function LoanCalculatorPage() {
                         <DataTable
                             title="Monthly Amortization Schedule"
                             defaultCollapsed={true}
+                            currencySymbol={currencySymbol}
                             columns={[
                                 { key: "month", label: "Month", format: (v: number) => v.toString() },
                                 { key: "payment", label: "Payment" },
