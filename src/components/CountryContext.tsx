@@ -15,45 +15,43 @@ interface CountryContextType {
 const DEFAULT_SLUG = "australia";
 const STORAGE_KEY = "remitiq_source_country";
 
-/**
- * Read saved corridor from localStorage SYNCHRONOUSLY so the initial render
- * already has the correct currency. This prevents a flash of AUD data when
- * the user has previously selected a different currency (e.g. USD).
- *
- * Without this, the flow was:
- *  1. useState(AUD) → useEffect fires fetch for AUD
- *  2. useEffect reads localStorage → finds USD → setState(USD) → fires fetch for USD
- *  3. Race condition: AUD response arrives after USD → overwrites correct data
- */
-function getInitialCorridor(): Corridor {
-  if (typeof window !== "undefined") {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const found = CORRIDORS.find((c) => c.slug === saved);
-        if (found) return found;
-      }
-    } catch {
-      // localStorage unavailable (SSR, private browsing) — use default
-    }
-  }
-  return CORRIDORS.find((c) => c.slug === DEFAULT_SLUG)!;
-}
+const DEFAULT_CORRIDOR = CORRIDORS.find((c) => c.slug === DEFAULT_SLUG)!;
 
 const CountryContext = createContext<CountryContextType | null>(null);
 
 export function CountryProvider({ children }: { children: ReactNode }) {
-  const [corridor, setCorridorState] = useState<Corridor>(getInitialCorridor);
+  /**
+   * Always start with the default corridor so the server-rendered HTML and
+   * the client's first render are identical — preventing the React hydration
+   * mismatch error ("Text content does not match server-rendered HTML").
+   *
+   * localStorage is a browser-only API; reading it synchronously in useState()
+   * causes the server to render 🇦🇺 while the client renders 🇺🇸, which React
+   * treats as a fatal hydration error.
+   *
+   * Instead we read localStorage in useEffect (runs only after hydration) and
+   * immediately update the state. The AbortController cleanup in every page's
+   * fetch useEffect cancels any in-flight AUD request, so there is no race
+   * condition between the default-currency fetch and the restored-currency fetch.
+   */
+  const [corridor, setCorridorState] = useState<Corridor>(DEFAULT_CORRIDOR);
 
-  // Auto-detect country for first-time visitors (no localStorage entry yet)
   useEffect(() => {
-    // If localStorage already had a saved corridor, skip geo-detection
+    // Step 1: restore saved preference from localStorage (runs after hydration)
     try {
-      if (localStorage.getItem(STORAGE_KEY)) return;
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const found = CORRIDORS.find((c) => c.slug === saved);
+        if (found) {
+          setCorridorState(found);
+          return; // saved preference found — skip geo-detection
+        }
+      }
     } catch {
-      return;
+      // localStorage unavailable (private browsing) — fall through to geo
     }
 
+    // Step 2: first-time visitor — auto-detect country via IP geo
     const detectCountry = async () => {
       try {
         const response = await fetch("/api/geo");
@@ -63,7 +61,7 @@ export function CountryProvider({ children }: { children: ReactNode }) {
           const found = CORRIDORS.find((c) => c.isoCode === data.countryCode);
           if (found) {
             setCorridorState(found);
-            localStorage.setItem(STORAGE_KEY, found.slug);
+            try { localStorage.setItem(STORAGE_KEY, found.slug); } catch { /* ignore */ }
           }
         }
       } catch (error) {
