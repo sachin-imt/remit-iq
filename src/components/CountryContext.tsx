@@ -15,42 +15,59 @@ interface CountryContextType {
 const DEFAULT_SLUG = "australia";
 const STORAGE_KEY = "remitiq_source_country";
 
-function getDefaultCorridor(): Corridor {
+/**
+ * Read saved corridor from localStorage SYNCHRONOUSLY so the initial render
+ * already has the correct currency. This prevents a flash of AUD data when
+ * the user has previously selected a different currency (e.g. USD).
+ *
+ * Without this, the flow was:
+ *  1. useState(AUD) → useEffect fires fetch for AUD
+ *  2. useEffect reads localStorage → finds USD → setState(USD) → fires fetch for USD
+ *  3. Race condition: AUD response arrives after USD → overwrites correct data
+ */
+function getInitialCorridor(): Corridor {
+  if (typeof window !== "undefined") {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const found = CORRIDORS.find((c) => c.slug === saved);
+        if (found) return found;
+      }
+    } catch {
+      // localStorage unavailable (SSR, private browsing) — use default
+    }
+  }
   return CORRIDORS.find((c) => c.slug === DEFAULT_SLUG)!;
 }
 
 const CountryContext = createContext<CountryContextType | null>(null);
 
 export function CountryProvider({ children }: { children: ReactNode }) {
-  const [corridor, setCorridorState] = useState<Corridor>(getDefaultCorridor);
+  const [corridor, setCorridorState] = useState<Corridor>(getInitialCorridor);
 
-  // Restore from localStorage on mount or auto-detect
+  // Auto-detect country for first-time visitors (no localStorage entry yet)
   useEffect(() => {
+    // If localStorage already had a saved corridor, skip geo-detection
+    try {
+      if (localStorage.getItem(STORAGE_KEY)) return;
+    } catch {
+      return;
+    }
+
     const detectCountry = async () => {
       try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          const found = CORRIDORS.find((c) => c.slug === saved);
-          if (found) {
-            setCorridorState(found);
-            return;
-          }
-        }
-
-        // Auto-detect if no saved setting
         const response = await fetch("/api/geo");
         const data = await response.json();
-        
+
         if (data.countryCode) {
           const found = CORRIDORS.find((c) => c.isoCode === data.countryCode);
           if (found) {
             setCorridorState(found);
-            // We save it once detected to avoid re-fetching every time
             localStorage.setItem(STORAGE_KEY, found.slug);
           }
         }
       } catch (error) {
-        console.error("Geo-detection or localStorage error:", error);
+        console.error("Geo-detection error:", error);
       }
     };
 

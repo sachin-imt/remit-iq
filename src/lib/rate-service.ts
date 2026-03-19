@@ -170,13 +170,11 @@ export async function fetchHistoricalRates(
 
             historicalCacheMap.set(sourceCurrency, { data: dataPoints, timestamp: Date.now() });
 
-            if (dataPoints.length > 0) {
-                const latest = dataPoints[dataPoints.length - 1];
-                latestRateCacheMap.set(sourceCurrency, {
-                    data: { rate: latest.midMarket, source: "frankfurter" },
-                    timestamp: Date.now(),
-                });
-            }
+            // NOTE: Do NOT update latestRateCacheMap here. fetchLatestRate() handles its
+            // own cache. Overwriting it here causes a race condition in Promise.all:
+            // the Frankfurter ECB rate (published ~16:00 CET, often yesterday's close)
+            // can overwrite the Wise live rate (real-time), causing the displayed
+            // mid-market rate to jump between values on consecutive requests.
 
             console.log(`[RateService] Frankfurter ${sourceCurrency}/INR history: ${dataPoints.length} data points`);
             return { data: dataPoints, source: "frankfurter" };

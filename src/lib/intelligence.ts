@@ -718,11 +718,22 @@ const MEM_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 interface MemCacheEntry { data: IntelligenceData; timestamp: number; }
 const memCache = new Map<string, MemCacheEntry>();
 
+// ─── Cache Version ──────────────────────────────────────────────────────────
+// Bump this whenever the intelligence computation logic or data source changes.
+// Stale DB cache entries with a different version are treated as cache misses,
+// preventing signal flip-flopping between old (Wise-based) and new (Frankfurter-based)
+// computations.
+const INTEL_CACHE_VERSION = "v3-frankfurter-primary";
+
 // ─── Public API ─────────────────────────────────────────────────────────────
 
 /**
- * Primary entry point — fetches real data from Wise (or Frankfurter fallback)
+ * Primary entry point — fetches real data from Frankfurter (ECB daily rates)
  * and returns the complete intelligence payload for any source currency → INR.
+ *
+ * Signal stability: ECB publishes one rate per day (~16:00 CET), so the signal
+ * is deterministic within a given calendar day. The Wise live rate is only used
+ * for the displayed mid-market rate, NOT for signal computation.
  */
 export async function getIntelligenceAsync(sourceCurrency: string = "AUD"): Promise<IntelligenceData> {
     const CACHE_MAX_AGE_HOURS = 1;
@@ -744,10 +755,19 @@ export async function getIntelligenceAsync(sourceCurrency: string = "AUD"): Prom
         if (cached) {
             const computedAt = new Date(cached.computedAt);
             const ageMs = Date.now() - computedAt.getTime();
-            if (ageMs < CACHE_MAX_AGE_HOURS * 3600000) {
-                console.log(`[Intelligence] Serving ${sourceCurrency} from DB cache`);
+            const cachedData = cached.data as Record<string, unknown>;
+
+            // Version check: reject stale cache entries from older computation strategies
+            // This prevents signal flip-flopping when the data source or algo changes
+            const cachedVersion = cachedData._cacheVersion as string | undefined;
+            if (cachedVersion !== INTEL_CACHE_VERSION) {
+                console.log(`[Intelligence] DB cache version mismatch for ${sourceCurrency}: "${cachedVersion}" vs "${INTEL_CACHE_VERSION}" — recomputing`);
+            } else if (ageMs < CACHE_MAX_AGE_HOURS * 3600000) {
+                console.log(`[Intelligence] Serving ${sourceCurrency} from DB cache (version: ${INTEL_CACHE_VERSION})`);
+                // Strip the internal version tag before returning
+                const { _cacheVersion: _, ...cleanData } = cachedData;
                 const result: IntelligenceData = {
-                    ...(cached.data as unknown as IntelligenceData),
+                    ...(cleanData as unknown as IntelligenceData),
                     dataSource: "cached"
                 };
                 // Warm the memory cache so subsequent requests skip DB entirely
@@ -760,8 +780,9 @@ export async function getIntelligenceAsync(sourceCurrency: string = "AUD"): Prom
         console.warn(`[Intelligence] DB cache unavailable for ${sourceCurrency}, fetching live:`, (dbErr as Error).message);
     }
 
-    // 2. Fetch live 90-day history for the specific currency (sufficient for all indicators;
-    //    90d is ~2x faster than 180d from Frankfurter and covers RSI14/MACD26/90d percentile)
+    // 2. Fetch live 90-day history from Frankfurter (ECB daily rates — deterministic, one
+    //    official fix per day) and latest rate from Wise (for display mid-market rate).
+    //    Signal computation uses ONLY the Frankfurter history for stability.
     console.log(`[Intelligence] Fetching live data for ${sourceCurrency}`);
     const [historyResult, latestResult] = await Promise.all([
         fetchHistoricalRates(90, sourceCurrency),
@@ -785,8 +806,9 @@ export async function getIntelligenceAsync(sourceCurrency: string = "AUD"): Prom
     // 3. Store in memory cache (instant on next warm request)
     memCache.set(sourceCurrency, { data: fullIntel, timestamp: Date.now() });
 
-    // 4. Best-effort DB cache (don't fail the request if DB is down)
-    cacheIntelligence(midMarketRate, fullIntel, sourceCurrency).catch((err) => {
+    // 4. Best-effort DB cache with version tag (don't fail the request if DB is down)
+    const versionedIntel = { ...fullIntel, _cacheVersion: INTEL_CACHE_VERSION };
+    cacheIntelligence(midMarketRate, versionedIntel, sourceCurrency).catch((err) => {
         console.warn(`[Intelligence] DB cache write skipped for ${sourceCurrency}:`, (err as Error).message);
     });
 

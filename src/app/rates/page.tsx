@@ -79,14 +79,18 @@ export default function RatesPage() {
   const { pairLabel, currencyCode } = useCountry();
 
   useEffect(() => {
+    const controller = new AbortController();
     setLoading(true);
-    fetch(`/api/rates?currency=${currencyCode}`)
+    fetch(`/api/rates?currency=${currencyCode}`, { signal: controller.signal })
       .then((r) => r.json())
       .then((data) => {
         setIntel(data);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch((err) => {
+        if (err.name !== "AbortError") setLoading(false);
+      });
+    return () => controller.abort();
   }, [currencyCode]);
 
   if (loading) {

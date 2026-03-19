@@ -116,14 +116,25 @@ export default function HomePage() {
   const { currencyCode, pairLabel, country } = useCountry();
 
   useEffect(() => {
+    // AbortController prevents stale responses from overwriting current data.
+    // Without this, switching currencies (e.g. AUD→USD on page load) causes a
+    // race: the slower AUD response arrives after the faster USD response and
+    // overwrites it, showing AUD rates under a USD header.
+    const controller = new AbortController();
     setLoading(true);
-    fetch(`/api/rates?currency=${currencyCode}`)
+    fetch(`/api/rates?currency=${currencyCode}`, { signal: controller.signal })
       .then((r) => r.json())
       .then((d) => {
         setIntelligence(d);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch((err) => {
+        // Ignore aborted requests — they're expected when currency changes quickly
+        if (err.name !== "AbortError") {
+          setLoading(false);
+        }
+      });
+    return () => controller.abort();
   }, [currencyCode]);
 
   const midMarketRate = intelligence?.midMarketRate ?? DEFAULT_MID_MARKET_RATE;

@@ -17,7 +17,8 @@ export default function ComparePage() {
   const { currencyCode, pairLabel } = useCountry();
 
   useEffect(() => {
-    fetch(`/api/rates?currency=${currencyCode}`)
+    const controller = new AbortController();
+    fetch(`/api/rates?currency=${currencyCode}`, { signal: controller.signal })
       .then((r) => r.json())
       .then((data) => {
         if (data.midMarketRate) {
@@ -26,7 +27,10 @@ export default function ComparePage() {
           if (data.providerConfigs) setProviderConfigs(data.providerConfigs);
         }
       })
-      .catch(() => { });
+      .catch((err) => {
+        if (err.name !== "AbortError") { /* ignore */ }
+      });
+    return () => controller.abort();
   }, [currencyCode]);
 
   const ranked = useMemo(() => {

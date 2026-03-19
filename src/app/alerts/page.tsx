@@ -16,7 +16,8 @@ export default function AlertsPage() {
 
   // Fetch live rate data on mount
   useEffect(() => {
-    fetch(`/api/rates?currency=${currencyCode}`)
+    const controller = new AbortController();
+    fetch(`/api/rates?currency=${currencyCode}`, { signal: controller.signal })
       .then((res) => res.json())
       .then((data) => {
         if (data.midMarketRate) {
@@ -29,7 +30,10 @@ export default function AlertsPage() {
           setAvgRate(parseFloat(data.stats.avg.toFixed(2)));
         }
       })
-      .catch(() => { });
+      .catch((err) => {
+        if (err.name !== "AbortError") { /* ignore */ }
+      });
+    return () => controller.abort();
   }, [currencyCode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
