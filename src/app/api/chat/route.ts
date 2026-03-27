@@ -110,9 +110,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const isDev = process.env.NODE_ENV === "development";
     return NextResponse.json(
-      { reply: isDev ? `Error (${errType}): ${errMsg}` : "Sorry, something went wrong. Please try again.", suggestions: [] },
+      { reply: `[DEBUG] ${errType}: ${errMsg}`, suggestions: [] },
       { status: 500 }
     );
   }
