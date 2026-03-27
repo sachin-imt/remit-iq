@@ -25,4 +25,4 @@ export const anthropic = new Anthropic();
  *
  * Switch to haiku once you're happy with the quality and want to reduce costs.
  */
-export const CHAT_MODEL = "claude-opus-4-6" as const;
+export const CHAT_MODEL = "claude-haiku-4-5" as const;
