@@ -97,18 +97,23 @@ export async function POST(request: Request) {
     // suggestions will come back in Phase 2 when we add tool calling
     return NextResponse.json({ reply, suggestions: [] });
   } catch (error) {
-    console.error("[RemitIQ Chat] Error:", error);
+    // Log the full error with enough detail to diagnose in Vercel logs
+    const errMsg = error instanceof Error ? error.message : String(error);
+    const errType = error?.constructor?.name ?? "Unknown";
+    console.error(`[RemitIQ Chat] ${errType}: ${errMsg}`);
 
-    // Use the SDK's typed exceptions for specific error messages
+    // Surface a meaningful message for auth errors
     if (error instanceof Anthropic.AuthenticationError) {
       return NextResponse.json(
-        { reply: "AI configuration error — please check the API key.", suggestions: [] },
+        { reply: `AI config error: ${errMsg}`, suggestions: [] },
         { status: 500 }
       );
     }
 
+    // Return the actual error in dev; generic message in production
+    const isDev = process.env.NODE_ENV === "development";
     return NextResponse.json(
-      { reply: "Sorry, something went wrong. Please try again.", suggestions: [] },
+      { reply: isDev ? `Error (${errType}): ${errMsg}` : "Sorry, something went wrong. Please try again.", suggestions: [] },
       { status: 500 }
     );
   }
