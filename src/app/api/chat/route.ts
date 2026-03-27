@@ -1,19 +1,3 @@
-/**
- * Phase 1: LLM-Powered Chat Route
- *
- * BEFORE (rule-based):
- *   message → matchIntent() → hardcoded regex response
- *
- * AFTER (LLM-powered):
- *   message → [fetch live rates] → buildSystemPrompt(rates) → Claude → response
- *
- * The key change: instead of pattern-matching the message, we give Claude
- * the live data as context and let it reason about the question naturally.
- *
- * The rate-fetching logic is IDENTICAL to before — we just pass the result
- * to Claude instead of a regex matcher.
- */
-
 import { NextResponse } from "next/server";
 import type { RateContext } from "@/lib/chat-knowledge";
 import { anthropic, CHAT_MODEL } from "@/lib/ai/client";
@@ -38,9 +22,7 @@ export async function POST(request: Request) {
       });
     }
 
-    // ── Step 1: Fetch live rate context (same as before) ──────────────────────
-    // This calls your existing /api/rates endpoint, which runs all the
-    // technical analysis (RSI, MACD, signal, etc.) you already built.
+    // Fetch live rate context
     let ctx: RateContext | null = null;
     try {
       const rateRes = await fetch(
@@ -71,51 +53,36 @@ export async function POST(request: Request) {
         };
       }
     } catch {
-      // Continue without context — Claude will still answer from general knowledge
+      // Continue without context
     }
 
-    // ── Step 2: Build the system prompt with live data injected ───────────────
-    // This is the core of Phase 1: formatting your computed data into
-    // Claude's briefing so it can answer questions about it naturally.
     const systemPrompt = buildSystemPrompt(ctx, currencyCode, countryName);
 
-    // ── Step 3: Call Claude (raw fetch to bypass SDK) ────────────────────────
-    const apiKey = process.env.ANTHROPIC_API_KEY ?? "";
-    const rawResponse = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        model: CHAT_MODEL,
-        max_tokens: 1024,
-        system: systemPrompt,
-        messages: [{ role: "user", content: message }],
-      }),
+    const response = await anthropic.messages.create({
+      model: CHAT_MODEL,
+      max_tokens: 1024,
+      system: systemPrompt,
+      messages: [{ role: "user", content: message }],
     });
-    const rawData = await rawResponse.json();
-    const reply = rawData?.content?.[0]?.text ?? JSON.stringify(rawData);
 
-    // suggestions will come back in Phase 2 when we add tool calling
+    const reply =
+      response.content[0].type === "text" ? response.content[0].text : "";
+
     return NextResponse.json({ reply, suggestions: [] });
   } catch (error) {
-    // Log the full error with enough detail to diagnose in Vercel logs
     const errMsg = error instanceof Error ? error.message : String(error);
     const errType = error?.constructor?.name ?? "Unknown";
     console.error(`[RemitIQ Chat] ${errType}: ${errMsg}`);
 
-    // Surface a meaningful message for auth errors
     if (error instanceof Anthropic.AuthenticationError) {
       return NextResponse.json(
-        { reply: `AI config error: ${errMsg}`, suggestions: [] },
+        { reply: "AI configuration error — please check the API key.", suggestions: [] },
         { status: 500 }
       );
     }
 
     return NextResponse.json(
-      { reply: `[DEBUG] ${errType}: ${errMsg}`, suggestions: [] },
+      { reply: "Sorry, something went wrong. Please try again.", suggestions: [] },
       { status: 500 }
     );
   }
