@@ -110,9 +110,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // TEMP: always return actual error so we can diagnose
+    const isDev = process.env.NODE_ENV === "development";
     return NextResponse.json(
-      { reply: `Error (${errType}): ${errMsg} | key_set=${!!process.env.ANTHROPIC_API_KEY}`, suggestions: [] },
+      { reply: isDev ? `Error (${errType}): ${errMsg}` : "Sorry, something went wrong. Please try again.", suggestions: [] },
       { status: 500 }
     );
   }
