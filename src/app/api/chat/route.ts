@@ -110,10 +110,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // Return the actual error in dev; generic message in production
-    const isDev = process.env.NODE_ENV === "development";
+    // TEMP: always return actual error so we can diagnose
     return NextResponse.json(
-      { reply: isDev ? `Error (${errType}): ${errMsg}` : "Sorry, something went wrong. Please try again.", suggestions: [] },
+      { reply: `Error (${errType}): ${errMsg} | key_set=${!!process.env.ANTHROPIC_API_KEY}`, suggestions: [] },
       { status: 500 }
     );
   }
