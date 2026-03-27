@@ -79,20 +79,24 @@ export async function POST(request: Request) {
     // Claude's briefing so it can answer questions about it naturally.
     const systemPrompt = buildSystemPrompt(ctx, currencyCode, countryName);
 
-    // ── Step 3: Call Claude ───────────────────────────────────────────────────
-    // The messages array is just the user's question.
-    // In Phase 5 (Memory), we'll pass the full conversation history here too.
-    const response = await anthropic.messages.create({
-      model: CHAT_MODEL,
-      max_tokens: 1024,
-      system: systemPrompt,
-      messages: [{ role: "user", content: message }],
+    // ── Step 3: Call Claude (raw fetch to bypass SDK) ────────────────────────
+    const apiKey = process.env.ANTHROPIC_API_KEY ?? "";
+    const rawResponse = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        model: CHAT_MODEL,
+        max_tokens: 1024,
+        system: systemPrompt,
+        messages: [{ role: "user", content: message }],
+      }),
     });
-
-    // response.content is an array of blocks (text, tool_use, etc.)
-    // For now we only have text responses — narrow by type before reading .text
-    const reply =
-      response.content[0].type === "text" ? response.content[0].text : "";
+    const rawData = await rawResponse.json();
+    const reply = rawData?.content?.[0]?.text ?? JSON.stringify(rawData);
 
     // suggestions will come back in Phase 2 when we add tool calling
     return NextResponse.json({ reply, suggestions: [] });
