@@ -43,8 +43,28 @@ async function ensureTables(): Promise<void> {
     await sql`ALTER TABLE daily_rates ADD COLUMN IF NOT EXISTS currency_code TEXT NOT NULL DEFAULT 'AUD'`;
     await sql`ALTER TABLE daily_rates ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'frankfurter'`;
     await sql`ALTER TABLE daily_rates ADD COLUMN IF NOT EXISTS fetched_at TIMESTAMPTZ DEFAULT NOW()`;
-    // Ensure composite unique index exists (handles ON CONFLICT even if PK is still just date)
-    await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_daily_rates_pk ON daily_rates(date, currency_code)`;
+
+    // ── PK migration (Apr 2026): fix date-only PK → composite (date, currency_code) ──
+    // Tables created before multi-currency had PRIMARY KEY (date) only, which caused
+    // ON CONFLICT DO NOTHING to silently drop all non-AUD inserts for dates that AUD
+    // already occupied. This migration is idempotent — it only runs if the PK is date-only.
+    try {
+        const [pkInfo] = await sql`
+            SELECT pg_get_constraintdef(oid) as def
+            FROM pg_constraint
+            WHERE conrelid = 'daily_rates'::regclass AND contype = 'p'
+        `;
+        if (pkInfo && pkInfo.def === 'PRIMARY KEY (date)') {
+            console.log('[DB] Migrating daily_rates PK from (date) → (date, currency_code)...');
+            await sql`ALTER TABLE daily_rates DROP CONSTRAINT daily_rates_pkey`;
+            await sql`ALTER TABLE daily_rates ADD PRIMARY KEY (date, currency_code)`;
+            await sql`DROP INDEX IF EXISTS idx_daily_rates_pk`;
+            console.log('[DB] PK migration complete.');
+        }
+    } catch (e) {
+        // If the PK is already composite, this is a no-op
+        console.warn('[DB] PK migration check skipped:', (e as Error).message);
+    }
 
     await sql`CREATE INDEX IF NOT EXISTS idx_daily_rates_date ON daily_rates(date DESC)`;
 
