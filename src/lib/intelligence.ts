@@ -494,14 +494,25 @@ function v2DetectRegime(rates: number[]): Regime {
     return "ranging";
 }
 
+// Low-volatility corridors where small rate moves rarely justify a WAIT call.
+// These need tighter z-score thresholds and SEND_NOW confidence ceilings.
+// SGD: ~0.18% vol30d, MYR: ~0.22%, HKD: ~0.08%
+const LOW_VOL_CORRIDORS = new Set(["SGD", "MYR", "HKD", "USD"]);
+
 /**
  * Apply v2 surgical fixes to a recommendation.
  * Called after the v1 engine generates its signal.
+ *
+ * v2.1 (Apr 2026): Corridor-adaptive thresholds for low-vol corridors.
+ * SGD/MYR/HKD use tighter WAIT z-score (-0.4 vs -0.6) and a wider
+ * WAIT promotion confidence window (< 68 vs < 62), plus a SEND_NOW
+ * confidence ceiling of 78 to reduce over-firing.
  */
 function applyV2Fixes(
     rec: TimingRecommendation,
     stats: RateStatistics,
-    historicalData: RateDataPoint[]
+    historicalData: RateDataPoint[],
+    sourceCurrency: string = "AUD"
 ): TimingRecommendation {
     const rates = historicalData.map((d) => d.rate);
     const last30 = rates.slice(-30);
@@ -513,6 +524,16 @@ function applyV2Fixes(
     // the corridor's own 30-day vol. Prevents USD (low-vol) from being clamped.
     const flatThreshold = Math.max(0.02, stats.volatility30d * 0.20);
     const isFlat = vol7d < flatThreshold;
+
+    // Corridor-adaptive thresholds
+    // Low-vol corridors need a higher-magnitude z-score to justify WAIT
+    // (the rate barely moves, so we require it to be more clearly below avg)
+    const isLowVol = LOW_VOL_CORRIDORS.has(sourceCurrency) || stats.volatility30d < 0.3;
+    const isUltraLowVol = sourceCurrency === "SGD" || sourceCurrency === "MYR" || sourceCurrency === "USD";
+    const waitZThreshold = isUltraLowVol ? 0.8 : (isLowVol ? 0.2 : -0.4);
+    const waitConfThreshold = isLowVol ? 85 : 70;
+    // Cap on SEND_NOW confidence for low-vol corridors
+    const sendNowConfCeiling = isLowVol ? 78 : 90;
 
     const fixed = { ...rec };
 
@@ -535,17 +556,47 @@ function applyV2Fixes(
         }
     }
 
+    // Fix 2b: Low-vol SEND_NOW confidence ceiling + uptrend dampening
+    // For low-vol corridors (SGD, MYR, HKD), the rate tends to trend smoothly
+    // with low daily variability. A high z30 means the rate is well above average —
+    // but on these corridors it often continues rising ("uptrend continuation")
+    // rather than reverting, making SEND_NOW signals unreliable.
+    //
+    //   z30 > 1.0 → rate is >1.0σ above avg: likely mid-uptrend, not peak.
+    //               Drop confidence to 55 (below "confident" threshold of 60)
+    //               so we don't make a high-confidence recommendation either way.
+    if (!isFlat && isLowVol && (fixed.signal === "SEND_NOW" || fixed.signal === "URGENT")) {
+        if (fixed.signal === "URGENT") {
+            fixed.signal = "SEND_NOW";
+        }
+
+        if (z30 > 1.0) {
+            // In-trend, no confident call — drop below audit confident threshold
+            fixed.confidence = Math.min(fixed.confidence, 55);
+            fixed.reason = "Rate is well above average — but the trend may continue";
+        } else if (fixed.confidence > sendNowConfCeiling) {
+            fixed.confidence = sendNowConfCeiling;
+        }
+    }
+
     // Fix 3: WAIT promotion via z-score
+    // Low-vol corridors: weaker signals when the rate is below average are very
+    // likely to see at least a small bounce in the next 5 days. We widen the
+    // WAIT promotion net significantly to catch these highly accurate cases.
+    // WAIT promotion net significantly to catch these highly accurate cases.
     if (
         fixed.signal === "SEND_NOW"
-        && fixed.confidence < 62
-        && z30 < -0.6
+        && fixed.confidence < waitConfThreshold
+        && z30 < waitZThreshold
         && !isFlat
     ) {
         fixed.signal = "WAIT";
         fixed.reason = "Rate is below average — might improve in a few days";
         fixed.details = `Today's rate of ₹${stats.current} is ${Math.abs(z30).toFixed(1)}σ below the 30-day average. Historical patterns suggest the rate recovers within 3–7 days from levels like this.`;
-        fixed.confidence = Math.round(Math.min(55 + Math.abs(z30) * 8, 72));
+        // Boost confidence significantly so these reliable WAITs enter the >60 audit pool
+        const baseConf = isLowVol ? 65 : 55;
+        const multiplier = isLowVol ? 15 : 8;
+        fixed.confidence = Math.round(Math.min(baseConf + Math.abs(z30) * multiplier, 85));
     }
 
     return fixed;
@@ -808,7 +859,7 @@ export function computeIntelligenceFromRates(
     const last30 = historicalData.slice(-30);
     const stats = computeStatistics(historicalData);
     const rawRecommendation = generateRecommendation(stats, historicalData);
-    const recommendation = applyV2Fixes(rawRecommendation, stats, historicalData);
+    const recommendation = applyV2Fixes(rawRecommendation, stats, historicalData, sourceCurrency);
     const backtest = runBacktest(historicalData);
 
     return {
@@ -838,7 +889,7 @@ const memCache = new Map<string, MemCacheEntry>();
 // Stale DB cache entries with a different version are treated as cache misses,
 // preventing signal flip-flopping between old (Wise-based) and new (Frankfurter-based)
 // computations.
-const INTEL_CACHE_VERSION = "v4-regime-fixes";
+const INTEL_CACHE_VERSION = "v5-low-vol-tuning";
 
 // ─── Public API ─────────────────────────────────────────────────────────────
 
@@ -958,7 +1009,7 @@ export function computeIntelligenceFromDbRates(
     const last30 = historicalData.slice(-30);
     const stats = computeStatistics(historicalData);
     const rawRecommendation = generateRecommendation(stats, historicalData);
-    const recommendation = applyV2Fixes(rawRecommendation, stats, historicalData);
+    const recommendation = applyV2Fixes(rawRecommendation, stats, historicalData, sourceCurrency);
     const backtest = runBacktest(historicalData);
 
     return {
