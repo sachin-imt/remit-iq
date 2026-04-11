@@ -121,7 +121,7 @@ const topics: TopicHandler[] = [
                 `| Platform | Margin | What it means |\n` +
                 `|----------|--------|---------------|\n` +
                 `| Wise | 0.00% | No markup, transparent fee |\n` +
-                `| Remitly | 0.06% | Best for promo rates |\n` +
+                `| Remitly | 0.56% | Solid ongoing rate |\n` +
                 `| Paysend | 0.50% | Low flat fee for card transfers |\n` +
                 `| WorldRemit | 0.70% | Great overall global reach |\n` +
                 `| Ria | 0.85% | Fast but higher margins |\n` +
@@ -233,7 +233,7 @@ const topics: TopicHandler[] = [
         handler: (ctx, currencyCode) => ({
             reply: `Based on the total INR received (rate × amount − fees), here's the current ranking for a $2,000 ${currencyCode} transfer:\n\n` +
                 `🥇 **Wise** — Transparent, best consistently\n` +
-                `🥈 **Remitly** — Excellent promotional rates\n` +
+                `🥈 **Remitly** — Consistently solid rates\n` +
                 `🥉 **Paysend** — Lowest flat fee on many corridors\n` +
                 `4️⃣ **WorldRemit** — Extensive global reach\n` +
                 `**Others:** Ria, XE, Instarem, Xoom, and MoneyGram.\n` +
@@ -252,13 +252,13 @@ const topics: TopicHandler[] = [
                 `| Platform | Fee | Hidden cost (margin on $2K) |\n` +
                 `|----------|-----|----------------------------|\n` +
                 `| Wise | $3.99 | ~$0.00 (0.00%) |\n` +
-                `| Remitly | FREE | ~$1.20 (0.06%) |\n` +
+                `| Remitly | FREE | ~$11.20 (0.56%) |\n` +
                 `| Paysend | $2.00 | ~$10.00 (0.50%) |\n` +
                 `| WorldRemit | $1.99 | ~$14.00 (0.70%) |\n` +
                 `| XE | FREE | ~$18.00 (0.90%) |\n` +
                 `| W. Union | $4.99 | ~$37.20 (1.86%) |\n\n` +
                 `**Total cost = Fee + Margin impact.** Wise wins despite having a fee because its margin is the smallest.\n\n` +
-                `💡 Tip: Remitly and Wise both offer fee-free first transfers for new users.`,
+                `💡 Tip: Rates and fees fluctuate, so always compare live data before sending.`,
             suggestions: ["Which platform is cheapest?", "What is FX margin?", "How much will I receive for $2000?"],
         }),
     },

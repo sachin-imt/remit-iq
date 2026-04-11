@@ -15,8 +15,6 @@ export interface Platform {
   marginPct: number; // FX margin as a percentage of mid-market rate
   baseFee: number;
   feePct: number;
-  promoMarginPct?: number; // Optional negative margin for promotional rates
-  promoCap?: number; // Optional cap limit for promo rates
 }
 
 /**
@@ -29,7 +27,7 @@ export interface Platform {
  */
 export const PROVIDER_DEFINITIONS = [
   { id: "wise", name: "Wise", abbr: "W", marginPct: 0, baseFee: 0.42, feePct: 0.50, speed: "Minutes", speedDays: 0, color: "#00B9FF", stars: 4.8, badge: "BEST RATE" as string | null, paymentMethods: ["Bank Transfer", "Debit Card", "PayID"], affiliateUrl: "https://wise.prf.hn/click/camref:1011l5DtXH", promoText: "First transfer free for new users" as string | null, isLive: true, lastVerified: "2026-03-02", marginSource: "Wise public API" },
-  { id: "remitly", name: "Remitly", abbr: "R", marginPct: 0.06, baseFee: 0, feePct: 0, promoMarginPct: -0.93, promoCap: 1500, speed: "Minutes", speedDays: 0, color: "#FF6B35", stars: 4.7, badge: "NO FEES" as string | null, paymentMethods: ["Bank Transfer", "Debit Card"], affiliateUrl: "https://remitly.tod8mp.net/c/7076716/663350/10408", promoText: "Zero fees on first 3 transfers" as string | null, isLive: false, lastVerified: "2026-02-21", marginSource: "Manual check vs remitly.com" },
+  { id: "remitly", name: "Remitly", abbr: "R", marginPct: 0.56, baseFee: 0, feePct: 0, speed: "Minutes", speedDays: 0, color: "#FF6B35", stars: 4.7, badge: null, paymentMethods: ["Bank Transfer", "Debit Card"], affiliateUrl: "https://remitly.tod8mp.net/c/7076716/663350/10408", promoText: null, isLive: false, lastVerified: "2026-04-11", marginSource: "Manual check vs remitly.com" },
   { id: "paysend", name: "Paysend", abbr: "PS", marginPct: 0.45, baseFee: 2.00, feePct: 0, speed: "Minutes", speedDays: 0, color: "#8B5CF6", stars: 4.6, badge: null, paymentMethods: ["Debit Card", "Bank Transfer"], affiliateUrl: "https://paysend.com/", promoText: "Low flat fees globally" as string | null, isLive: false, lastVerified: "2026-04-11", marginSource: "Industry average estimate" },
   { id: "worldremit", name: "WorldRemit", abbr: "WR", marginPct: 0.65, baseFee: 1.99, feePct: 0, speed: "Minutes", speedDays: 0, color: "#8E24AA", stars: 4.5, badge: null, paymentMethods: ["Bank Transfer", "Debit Card"], affiliateUrl: "https://www.worldremit.com/", promoText: "First 3 transfers free with code" as string | null, isLive: false, lastVerified: "2026-04-11", marginSource: "Industry average estimate" },
   { id: "ria", name: "Ria", abbr: "RIA", marginPct: 0.85, baseFee: 1.00, feePct: 0, speed: "Same day", speedDays: 0.5, color: "#F97316", stars: 4.4, badge: null, paymentMethods: ["Bank Transfer", "Debit Card", "Cash"], affiliateUrl: "https://www.riamoneytransfer.com/", promoText: null, isLive: false, lastVerified: "2026-04-11", marginSource: "Industry average estimate" },
@@ -57,8 +55,6 @@ export function getPlatforms(
       marginPct: config?.margin_pct ?? baseDef.marginPct,
       baseFee: config?.base_fee ?? baseDef.baseFee,
       feePct: config?.fee_pct ?? baseDef.feePct,
-      promoMarginPct: (config?.promo_margin_pct !== undefined && config?.promo_margin_pct !== null) ? config.promo_margin_pct : baseDef.promoMarginPct,
-      promoCap: (config?.promo_cap !== undefined && config?.promo_cap !== null) ? config.promo_cap : baseDef.promoCap,
     };
 
     let effectiveRate = 0;
@@ -68,20 +64,7 @@ export function getPlatforms(
     const amountAfterFee = amount - fee;
 
     if (amountAfterFee > 0) {
-      if ('promoCap' in p && p.promoCap && 'promoMarginPct' in p && p.promoMarginPct !== undefined) {
-        // Tiered rate calculation (blended rate)
-        const promoRate = midMarketRate * (1 - p.promoMarginPct / 100);
-        const standardRate = midMarketRate * (1 - p.marginPct / 100);
-
-        const promoAmount = Math.min(amountAfterFee, p.promoCap);
-        const standardAmount = amountAfterFee - promoAmount;
-
-        const totalReceived = (promoAmount * promoRate) + (standardAmount * standardRate);
-        effectiveRate = totalReceived / amountAfterFee;
-      } else {
-        // Standard calculation
-        effectiveRate = midMarketRate * (1 - p.marginPct / 100);
-      }
+      effectiveRate = midMarketRate * (1 - p.marginPct / 100);
     }
 
     return {
@@ -115,7 +98,7 @@ export function formatINR(n: number): string {
 export function getRankedPlatforms(
   amount: number,
   midMarketRate?: number,
-  dynamicConfigs?: { platform_id: string; margin_pct: number; base_fee: number; fee_pct: number; promo_margin_pct: number | null; promo_cap: number | null }[]
+  dynamicConfigs?: { platform_id: string; margin_pct: number; base_fee: number; fee_pct: number; }[]
 ) {
   const platforms = midMarketRate
     ? getPlatforms(midMarketRate, amount, dynamicConfigs)

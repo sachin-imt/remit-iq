@@ -64,7 +64,7 @@ ${liveData}
 
 ## Platform Quick Reference (~$2,000 transfer)
 - Wise: transparent zero markup, clear flat fee, fastest overall
-- Remitly: best promo rates for new users, then standard
+- Remitly: solid everyday rates and typically no flat fee
 - Paysend: lowest flat fee for card-to-card, tight margins
 - WorldRemit: massive global footprint, very competitive rates
 - Ria/XE: trusted global names with solid mid-tier margins
