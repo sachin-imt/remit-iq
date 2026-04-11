@@ -1,0 +1,15 @@
+{
+  "generatedAt": "2026-03-29T10:39:43.078Z",
+  "totalExamples": 3038,
+  "trainingExamples": 2430,
+  "validationExamples": 608,
+  "corridors": [
+    "AUD",
+    "GBP",
+    "USD",
+    "CAD"
+  ],
+  "topics": 26,
+  "offTopicExamples": 48,
+  "multiTurnExamples": 6
+}

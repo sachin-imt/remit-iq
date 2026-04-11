@@ -101,12 +101,12 @@ const topics: TopicHandler[] = [
     // ── MID-MARKET RATE ──
     {
         patterns: [/mid.?market/i, /interbank/i, /real\s*rate/i, /ecb\s*rate/i, /wholesale/i],
-        handler: (ctx) => ({
+        handler: (ctx, currencyCode) => ({
             reply: `The **mid-market rate** (also called the interbank rate) is the "true" exchange rate — the midpoint between buy and sell prices on the global forex market.\n\n` +
-                `${ctx ? `Right now it's **₹${ctx.midMarketRate.toFixed(2)}** per AUD, from the European Central Bank.` : ""}\n\n` +
+                `${ctx ? `Right now it's **₹${ctx.midMarketRate.toFixed(2)}** per ${currencyCode}, from the European Central Bank.` : ""}\n\n` +
                 `**Why it matters:** No remittance platform gives you this rate. They all add an FX margin (markup). For example:\n` +
-                `• Wise: ~0.34% margin → you get ~₹0.22 less per AUD\n` +
-                `• Western Union: ~1.86% margin → you get ~₹1.19 less per AUD\n\n` +
+                `• Wise: ~0.34% margin → the lowest markup available\n` +
+                `• Western Union: ~1.86% margin → the highest markup of the major platforms\n\n` +
                 `The smaller the margin, the better the deal. RemitIQ shows you each platform's margin transparently.`,
             suggestions: ["What is FX margin?", "Which platform has the lowest margin?", "What's the current rate?"],
         }),
@@ -115,18 +115,22 @@ const topics: TopicHandler[] = [
     // ── FX MARGIN ──
     {
         patterns: [/margin/i, /markup/i, /spread/i, /how.*platforms.*make.*money/i, /hidden.*fee/i],
-        handler: (ctx) => ({
+        handler: (ctx, currencyCode) => ({
             reply: `**FX margin** (or markup/spread) is how remittance platforms make money — they give you a rate slightly worse than mid-market.\n\n` +
-                `Here's how the main platforms compare:\n` +
+                `Here's how the main platforms compare for ${currencyCode}/INR:\n` +
                 `| Platform | Margin | What it means |\n` +
                 `|----------|--------|---------------|\n` +
-                `| Wise | 0.34% | ₹0.22/AUD less than mid-market |\n` +
-                `| Remitly | 0.56% | ₹0.36/AUD less |\n` +
-                `| TorFX | 0.75% | ₹0.48/AUD less |\n` +
-                `| OFX | 0.86% | ₹0.55/AUD less |\n` +
-                `| Instarem | 1.03% | ₹0.66/AUD less |\n` +
-                `| Western Union | 1.86% | ₹1.19/AUD less |\n\n` +
-                `On a $2,000 transfer, the difference between 0.34% and 1.86% margin is about **₹2,000** (~AU$31).`,
+                `| Wise | 0.00% | No markup, transparent fee |\n` +
+                `| Remitly | 0.06% | Best for promo rates |\n` +
+                `| Paysend | 0.50% | Low flat fee for card transfers |\n` +
+                `| WorldRemit | 0.70% | Great overall global reach |\n` +
+                `| Ria | 0.85% | Fast but higher margins |\n` +
+                `| XE | 0.90% | Highly trusted brand |\n` +
+                `| Instarem | 1.03% | Mid-tier competitor |\n` +
+                `| Xoom | 1.20% | PayPal integration, easy but pricey |\n` +
+                `| MoneyGram | 1.60% | Global cash giant |\n` +
+                `| Western Union | 1.86% | Highest long-term margins |\n\n` +
+                `On a $2,000 transfer, the difference between 0.34% and 1.86% margin can be **₹2,000+**.`,
             suggestions: ["Which platform is best overall?", "Do platforms also charge fees?", "What is mid-market rate?"],
         }),
     },
@@ -226,17 +230,16 @@ const topics: TopicHandler[] = [
     // ── PLATFORM COMPARISON ──
     {
         patterns: [/which.*platform/i, /best.*platform/i, /cheapest/i, /wise.*remitly/i, /compare.*platform/i, /recommend.*platform/i, /which.*use/i, /best.*send/i],
-        handler: (ctx) => ({
-            reply: `Based on the total INR received (rate × amount − fees), here's the current ranking for a $2,000 AUD transfer:\n\n` +
-                `🥇 **Wise** — Best rate (0.34% margin), $3.99 fee, arrives in minutes\n` +
-                `🥈 **Remitly** — No fees, 0.56% margin, arrives in minutes\n` +
-                `🥉 **TorFX** — No fees, 0.75% margin, 1-2 days\n` +
-                `4️⃣ **OFX** — No fees, 0.86% margin, 1-2 days\n` +
-                `5️⃣ **Instarem** — $1.99 fee, 1.03% margin, same day\n` +
-                `6️⃣ **Western Union** — $4.99 fee, 1.86% margin, minutes\n\n` +
-                `**Best overall:** Wise (best rate despite small fee)\n` +
-                `**Best for small amounts:** Remitly (no fee)\n` +
-                `**Best for large amounts:** TorFX or OFX (no fees, competitive rates)`,
+        handler: (ctx, currencyCode) => ({
+            reply: `Based on the total INR received (rate × amount − fees), here's the current ranking for a $2,000 ${currencyCode} transfer:\n\n` +
+                `🥇 **Wise** — Transparent, best consistently\n` +
+                `🥈 **Remitly** — Excellent promotional rates\n` +
+                `🥉 **Paysend** — Lowest flat fee on many corridors\n` +
+                `4️⃣ **WorldRemit** — Extensive global reach\n` +
+                `**Others:** Ria, XE, Instarem, Xoom, and MoneyGram.\n` +
+                `**Best overall:** Wise (best sustained rate)\n` +
+                `**Best for small amounts:** Remitly or Paysend\n` +
+                `**Best for global parity:** WorldRemit or XE`,
             suggestions: ["What is FX margin?", "How do you rank platforms?", "Is now a good time to send?"],
         }),
     },
@@ -248,11 +251,11 @@ const topics: TopicHandler[] = [
             reply: `Platform fees vary, but **the exchange rate margin usually matters more** than the upfront fee:\n\n` +
                 `| Platform | Fee | Hidden cost (margin on $2K) |\n` +
                 `|----------|-----|----------------------------|\n` +
-                `| Wise | $3.99 | ~$6.80 (0.34%) |\n` +
-                `| Remitly | FREE | ~$11.20 (0.56%) |\n` +
-                `| TorFX | FREE | ~$15.00 (0.75%) |\n` +
-                `| OFX | FREE | ~$17.20 (0.86%) |\n` +
-                `| Instarem | $1.99 | ~$20.60 (1.03%) |\n` +
+                `| Wise | $3.99 | ~$0.00 (0.00%) |\n` +
+                `| Remitly | FREE | ~$1.20 (0.06%) |\n` +
+                `| Paysend | $2.00 | ~$10.00 (0.50%) |\n` +
+                `| WorldRemit | $1.99 | ~$14.00 (0.70%) |\n` +
+                `| XE | FREE | ~$18.00 (0.90%) |\n` +
                 `| W. Union | $4.99 | ~$37.20 (1.86%) |\n\n` +
                 `**Total cost = Fee + Margin impact.** Wise wins despite having a fee because its margin is the smallest.\n\n` +
                 `💡 Tip: Remitly and Wise both offer fee-free first transfers for new users.`,
@@ -265,9 +268,9 @@ const topics: TopicHandler[] = [
         patterns: [/speed/i, /how (long|fast)/i, /delivery/i, /instant/i, /same.*day/i, /minutes?/i],
         handler: () => ({
             reply: `Transfer speeds from Australia to India:\n\n` +
-                `⚡ **Minutes:** Wise, Remitly, Western Union\n` +
-                `📅 **Same day:** Instarem\n` +
-                `📦 **1-2 business days:** TorFX, OFX\n\n` +
+                `⚡ **Minutes:** Wise, Remitly, Western Union, Paysend\n` +
+                `📅 **Same day:** Instarem, Ria\n` +
+                `📦 **1-2 business days:** XE\n\n` +
                 `Speed depends on:\n` +
                 `• **Payment method** — PayID/card = faster; bank transfer = slower\n` +
                 `• **Recipient bank** — Major banks (SBI, HDFC) process faster\n` +
@@ -277,24 +280,22 @@ const topics: TopicHandler[] = [
         }),
     },
 
-    // ── WHAT AFFECTS AUD/INR ──
+    // ── WHAT AFFECTS THE RATE ──
     {
         patterns: [/what.*affect/i, /what.*drives/i, /why.*rate.*change/i, /factor.*rate/i, /rba/i, /rbi/i, /interest.*rate/i, /iron.*ore/i, /commodit/i],
-        handler: () => ({
-            reply: `**Key factors that move the AUD/INR rate:**\n\n` +
+        handler: (_, currencyCode, countryName) => ({
+            reply: `**Key factors that move the ${currencyCode}/INR rate:**\n\n` +
                 `🏦 **Central bank decisions**\n` +
-                `• RBA (Australia) rate hikes → AUD strengthens → more INR per AUD\n` +
-                `• RBI (India) rate hikes → INR strengthens → fewer INR per AUD\n\n` +
-                `⛏️ **Commodity prices**\n` +
-                `• Iron ore, coal, natural gas prices rising → AUD strengthens (Australia exports these)\n\n` +
+                `• The ${countryName} central bank rate decisions directly impact ${currencyCode} strength\n` +
+                `• RBI (India) rate hikes → INR strengthens → fewer INR per ${currencyCode}\n\n` +
                 `🌍 **Global risk sentiment**\n` +
-                `• Market fear → AUD falls (it's a "risk-on" currency)\n` +
-                `• Market optimism → AUD rises\n\n` +
+                `• Market fear or uncertainty tends to weaken smaller currencies\n` +
+                `• Market optimism → risk-sensitive currencies like ${currencyCode} often strengthen\n\n` +
                 `🎆 **Seasonal patterns**\n` +
-                `• Diwali season (Oct-Nov): Higher remittance demand from Australia\n` +
+                `• Diwali season (Oct-Nov): Higher remittance demand from the diaspora\n` +
                 `• Year-end: Indian companies repatriate profits\n\n` +
                 `📊 **Trade balance**\n` +
-                `• Australia-India trade flows affect supply/demand for both currencies`,
+                `• ${countryName}–India trade flows affect supply/demand for both currencies`,
             suggestions: ["Is now a good time to send?", "What is volatility?", "What indicators do you use?"],
         }),
     },
@@ -302,31 +303,31 @@ const topics: TopicHandler[] = [
     // ── SEASONAL PATTERNS ──
     {
         patterns: [/season/i, /diwali/i, /month/i, /time of year/i, /pattern/i, /trend/i, /forecast/i, /predict/i],
-        handler: () => ({
-            reply: `**Seasonal patterns in AUD/INR:**\n\n` +
-                `• **Jan-Mar:** AUD often strengthens (iron ore demand from China)\n` +
-                `• **Apr-Jun:** Mixed — depends on RBA/RBI decisions\n` +
-                `• **Jul-Sep:** AUD can weaken (China slowdown fears)\n` +
-                `• **Oct-Nov (Diwali):** High remittance season — increased AUD→INR demand\n` +
+        handler: (_, currencyCode) => ({
+            reply: `**Seasonal patterns in ${currencyCode}/INR:**\n\n` +
+                `• **Jan-Mar:** Many currencies strengthen as global trade picks up\n` +
+                `• **Apr-Jun:** Mixed — depends on respective central bank decisions\n` +
+                `• **Jul-Sep:** Some volatility as mid-year economic data comes in\n` +
+                `• **Oct-Nov (Diwali):** High remittance season — increased demand for INR\n` +
                 `• **Dec:** Year-end repatriation flows\n\n` +
                 `⚠️ Seasonal patterns are tendencies, not guarantees. Central bank decisions and global events can override them.\n\n` +
                 `We don't predict future rates — we analyze whether the current rate is favorable compared to recent history.`,
-            suggestions: ["What indicators do you use?", "Is now a good time to send?", "What affects AUD/INR?"],
+            suggestions: ["What indicators do you use?", "Is now a good time to send?", `What affects ${currencyCode}/INR?`],
         }),
     },
 
     // ── HOW MUCH WILL I RECEIVE ──
     {
         patterns: [/how much.*(receive|get|inr)/i, /\$?\d+.*aud/i, /calculat/i, /convert/i],
-        handler: (ctx) => ({
+        handler: (ctx, currencyCode) => ({
             reply: ctx
-                ? `For a **$2,000 AUD** transfer at today's rates:\n\n` +
+                ? `For a **$2,000 ${currencyCode}** transfer at today's rates:\n\n` +
                 `| Platform | Rate | Fee | You Receive |\n` +
                 `|----------|------|-----|-------------|\n` +
                 `| Wise | ₹${(ctx.midMarketRate * 0.9966).toFixed(2)} | $3.99 | ~₹${Math.round((2000 - 3.99) * ctx.midMarketRate * 0.9966).toLocaleString("en-IN")} |\n` +
                 `| Remitly | ₹${(ctx.midMarketRate * 0.9944).toFixed(2)} | FREE | ~₹${Math.round(2000 * ctx.midMarketRate * 0.9944).toLocaleString("en-IN")} |\n` +
                 `| W. Union | ₹${(ctx.midMarketRate * 0.9814).toFixed(2)} | $4.99 | ~₹${Math.round((2000 - 4.99) * ctx.midMarketRate * 0.9814).toLocaleString("en-IN")} |\n\n` +
-                `The difference between best and worst: **~₹2,000** on $2,000 AUD!\n\n` +
+                `The difference between best and worst can be **₹2,000+** on a $2,000 transfer!\n\n` +
                 `Use our [Compare page](/compare) to see exact amounts for any transfer size.`
                 : `Visit the homepage and enter your amount to see a live comparison across all platforms.`,
             suggestions: ["Which platform is cheapest?", "What is FX margin?", "Is now a good time to send?"],
@@ -403,11 +404,11 @@ const topics: TopicHandler[] = [
             reply: `**Payment methods by platform:**\n\n` +
                 `| Platform | Methods |\n` +
                 `|----------|--------|\n` +
-                `| Wise | Bank Transfer, Debit Card, PayID |\n` +
-                `| Remitly | Bank Transfer, Debit Card |\n` +
-                `| TorFX | Bank Transfer |\n` +
-                `| OFX | Bank Transfer |\n` +
-                `| Instarem | Bank Transfer, PayID |\n` +
+                `| Wise | Bank Transfer, Card, PayID |\n` +
+                `| Remitly | Bank Transfer, Card |\n` +
+                `| WorldRemit | Bank Transfer, Card |\n` +
+                `| XE | Bank Transfer |\n` +
+                `| Xoom | PayPal, Card, Bank |\n` +
                 `| Western Union | Bank, Card, Cash |\n\n` +
                 `💡 **PayID** is usually the fastest and cheapest option if available. Debit cards are also fast but may have slightly higher fees on some platforms.`,
             suggestions: ["How long does it take?", "Which platform is best?", "How do I send money?"],
@@ -432,19 +433,21 @@ const topics: TopicHandler[] = [
     // ── THANK YOU ──
     {
         patterns: [/thank/i, /cheers/i, /awesome/i, /helpful/i, /great/i, /perfect/i, /nice/i, /cool/i],
-        handler: () => ({
-            reply: `Happy to help! 😊 If you have any more questions about AUD/INR rates, platform comparisons, or our timing signals, just ask.\n\nGood luck with your transfer! 🇦🇺→🇮🇳`,
-            suggestions: ["What's the current rate?", "Is now a good time to send?", "Which platform is cheapest?"],
+        handler: (_, currencyCode, countryName) => ({
+            reply: `Happy to help! 😊 If you have any more questions about ${currencyCode}/INR rates, platform comparisons, or our timing signals, just ask.\n\nGood luck with your transfer! 💸`,
+            suggestions: [`What's the current ${currencyCode} rate?`, "Is now a good time to send?", "Which platform is cheapest?"],
         }),
     },
 ];
 
 // ─── Intent Matching ────────────────────────────────────────────────────────
 
-const OFF_TOPIC_RESPONSE: ChatResponse = {
-    reply: `I'm only set up to help with **AUD/INR exchange rates and sending money to India** — I can't help with other topics.\n\nI can help with things like:\n• What's today's rate and is it good?\n• Which platform gives you the most rupees\n• Whether now is a good time to send\n• How our timing recommendations work`,
-    suggestions: ["What's the current rate?", "Which platform is cheapest?", "Is now a good time to send?"],
-};
+function makeOffTopicResponse(currencyCode: string = "AUD"): ChatResponse {
+    return {
+        reply: `I'm only set up to help with **${currencyCode}/INR exchange rates and sending money to India** — I can't help with other topics.\n\nI can help with things like:\n• What's today's rate and is it good?\n• Which platform gives you the most rupees\n• Whether now is a good time to send\n• How our timing recommendations work`,
+        suggestions: [`What's the current ${currencyCode} rate?`, "Which platform is cheapest?", "Is now a good time to send?"],
+    };
+}
 
 const FALLBACK_RESPONSE: ChatResponse = {
     reply: `I'm not sure I understood that! Here are some things I can help with:\n\n• 📈 Today's exchange rate\n• 🏦 Which platform gives you the best deal\n• ⏰ Whether now is a good time to send\n• 💰 Fees and how platforms compare\n• ❓ How our recommendations work`,
@@ -472,7 +475,7 @@ export function matchIntent(
 
     // Off-topic detection
     for (const pattern of OFF_TOPIC_PATTERNS) {
-        if (pattern.test(trimmed)) return OFF_TOPIC_RESPONSE;
+        if (pattern.test(trimmed)) return makeOffTopicResponse(currencyCode);
     }
 
     // Match against topics

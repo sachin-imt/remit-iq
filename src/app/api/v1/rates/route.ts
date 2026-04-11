@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateApiKey, getCachedIntelligence, isIntelligenceFresh, getRecentRates, getLatestRate, cacheIntelligence, getRateCount, getProviderConfigs } from "@/lib/db";
-import { getIntelligenceAsync, computeIntelligenceFromRates } from "@/lib/intelligence";
+import { getIntelligenceAsync, computeIntelligenceFromDbRates } from "@/lib/intelligence";
 import { getPlatforms, getRankedPlatforms } from "@/data/platforms";
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
+    // Support ?pair=AUDINR or ?currency=AUD (default: AUD for backward compat)
+    const searchParams = request.nextUrl.searchParams;
+    const pairParam = searchParams.get("pair");  // e.g. "AUDINR"
+    const currencyParam = searchParams.get("currency");  // e.g. "AUD"
+    const currency = pairParam
+        ? pairParam.replace("INR", "").toUpperCase()
+        : (currencyParam || "AUD").toUpperCase();
     try {
         // 1. Authenticate the Request
         const authHeader = request.headers.get("authorization");
@@ -27,20 +34,20 @@ export async function GET(request: NextRequest) {
         let midMarketRate;
 
         if (await isIntelligenceFresh(24)) {
-            const cached = (await getCachedIntelligence())!;
+            const cached = (await getCachedIntelligence(currency))!;
             intelPayload = cached.data as any;
             midMarketRate = cached.midMarketRate;
         } else {
             // Unlikely to hit this in production due to cron, but safe fallback
-            const rateCount = await getRateCount();
+            const rateCount = await getRateCount(currency);
             if (rateCount >= 30) {
-                const persistedRates = await getRecentRates(180);
-                const latestRate = await getLatestRate();
+                const persistedRates = await getRecentRates(180, currency);
+                const latestRate = await getLatestRate(currency);
                 midMarketRate = latestRate?.mid_market || 64.10;
-                intelPayload = computeIntelligenceFromRates(persistedRates, midMarketRate);
-                await cacheIntelligence(midMarketRate, intelPayload);
+                intelPayload = computeIntelligenceFromDbRates(persistedRates, midMarketRate, currency);
+                await cacheIntelligence(midMarketRate, intelPayload, currency);
             } else {
-                intelPayload = await getIntelligenceAsync();
+                intelPayload = await getIntelligenceAsync(currency);
                 midMarketRate = intelPayload.midMarketRate;
             }
         }
@@ -53,7 +60,7 @@ export async function GET(request: NextRequest) {
             metadata: {
                 timestamp: new Date().toISOString(),
                 client: client.client_name,
-                currency_pair: "AUD/INR"
+                currency_pair: `${currency}/INR`
             },
             market: {
                 interbank_rate: midMarketRate,

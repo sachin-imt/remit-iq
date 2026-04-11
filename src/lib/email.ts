@@ -39,6 +39,7 @@ interface RateAlertParams {
   targetRate: number;
   currentRate: number;
   midMarketRate: number;
+  currencyCode?: string;
 }
 
 interface BestDealAlertParams {
@@ -54,7 +55,7 @@ interface BestDealAlertParams {
  */
 export async function sendRateAlert(params: RateAlertParams): Promise<boolean> {
   try {
-    const { to, targetRate, currentRate, midMarketRate } = params;
+    const { to, targetRate, currentRate, midMarketRate, currencyCode = "AUD" } = params;
     const resend = getResend();
 
     if (!resend) {
@@ -65,12 +66,12 @@ export async function sendRateAlert(params: RateAlertParams): Promise<boolean> {
     const { error } = await resend.emails.send({
       from: FROM_EMAIL,
       to,
-      subject: `🎯 AUD/INR hit your target! Now ₹${currentRate.toFixed(2)}`,
+      subject: `🎯 ${currencyCode}/INR hit your target! Now ₹${currentRate.toFixed(2)}`,
       headers: {
         "List-Unsubscribe": "<https://remitiq.co/alerts>",
         "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
       },
-      text: `Rate Target Hit! AUD/INR is now ₹${currentRate.toFixed(2)} (your target: ₹${targetRate.toFixed(2)}). Compare platforms at https://remitiq.co\n\nTo stop receiving alerts, visit https://remitiq.co/alerts\n\n${PHYSICAL_ADDRESS}`,
+      text: `Rate Target Hit! ${currencyCode}/INR is now ₹${currentRate.toFixed(2)} (your target: ₹${targetRate.toFixed(2)}). Compare platforms at https://remitiq.co\n\nTo stop receiving alerts, visit https://remitiq.co/alerts\n\n${PHYSICAL_ADDRESS}`,
       html: `
 <!DOCTYPE html>
 <html>
@@ -85,7 +86,7 @@ export async function sendRateAlert(params: RateAlertParams): Promise<boolean> {
     <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:16px;padding:32px;text-align:center;">
       <div style="font-size:48px;margin-bottom:12px;">🎯</div>
       <h1 style="color:white;font-size:24px;margin:0 0 8px;">Rate Target Hit!</h1>
-      <p style="color:#7A9CC4;font-size:16px;margin:0 0 24px;">AUD/INR has reached your target rate</p>
+      <p style="color:#7A9CC4;font-size:16px;margin:0 0 24px;">${currencyCode}/INR has reached your target rate</p>
 
       <div style="background:#FFFFFF;border-radius:12px;padding:20px;margin-bottom:20px;">
         <div style="color:#7A9CC4;font-size:13px;margin-bottom:4px;">Current Best Rate</div>

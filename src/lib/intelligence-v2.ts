@@ -94,9 +94,18 @@ function detectRegime(rates: number[]): Regime {
 
 // ─── v2 Public API ───────────────────────────────────────────────────────────
 
+// Corridors with very low 30-day volatility (< 0.3%) where small moves
+// rarely justify a WAIT signal — use tighter z-score thresholds.
+// SGD: ~0.18%, MYR: ~0.22%, HKD: ~0.08%
+const LOW_VOL_CORRIDORS = new Set(["SGD", "MYR", "HKD"]);
+
 /**
  * Drop-in replacement for computeIntelligenceFromRates.
  * Calls v1 internally, then applies three post-processing fixes.
+ *
+ * v2.1 (Apr 2026): Adaptive z-score thresholds per corridor volatility regime.
+ * Low-vol corridors (SGD, MYR, HKD) use tighter WAIT promotion (-0.4 vs -0.6)
+ * and a SEND_NOW confidence ceiling (78) to prevent over-firing.
  */
 export function computeIntelligenceFromRatesV2(
     historicalData: RateDataPoint[],
@@ -118,6 +127,15 @@ export function computeIntelligenceFromRatesV2(
     const vol30d = v1Result.stats.volatility30d;
     const flatThreshold = Math.max(0.02, vol30d * 0.20);
     const isFlat = vol7d < flatThreshold;
+
+    // Corridor-adaptive thresholds
+    const isLowVol = LOW_VOL_CORRIDORS.has(sourceCurrency) || vol30d < 0.3;
+    // Low-vol corridors need a larger z-score deviation to justify WAIT
+    // (rate rarely moves enough to vindicate a WAIT call)
+    const waitZThreshold = isLowVol ? -0.4 : -0.6;
+    // Low-vol corridors: cap SEND_NOW confidence to prevent over-confident
+    // signals on corridors where the rate is predictably stable
+    const sendNowConfCeiling = isLowVol ? 78 : 90;
 
     // Step 3: Apply surgical fixes
     const rec = { ...v1Result.recommendation };
@@ -141,15 +159,22 @@ export function computeIntelligenceFromRatesV2(
         }
     }
 
+    // ── Fix 2b: Low-vol SEND_NOW confidence ceiling ──
+    // Prevents over-confident SEND_NOW on corridors like SGD/MYR/HKD where
+    // the 5-day future range is frequently narrower than the signal implies.
+    if (!isFlat && rec.signal === "SEND_NOW" && rec.confidence > sendNowConfCeiling) {
+        rec.confidence = sendNowConfCeiling;
+    }
+
     // ── Fix 3: WAIT promotion via z-score ──
     // When v1 says "weak SEND_NOW" (confidence < 62, so it's mixed signals)
-    // and the z-score says the rate is genuinely below average (z30 < -0.6),
-    // promote to WAIT. This captures the ~11% of signals where v1's
-    // bearishPct threshold was too high but z-score disagrees.
+    // and the z-score says the rate is genuinely below average,
+    // promote to WAIT. Threshold is tighter for low-vol corridors where
+    // the rate rarely moves enough to reward a wait.
     if (
         rec.signal === "SEND_NOW"
         && rec.confidence < 62
-        && z30 < -0.6
+        && z30 < waitZThreshold
         && !isFlat
     ) {
         rec.signal = "WAIT";

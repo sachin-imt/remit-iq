@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { updateProviderConfig, getProviderConfigs } from "@/lib/db";
+import { CORRIDORS } from "@/data/corridors";
 
 export const dynamic = 'force-dynamic';
 
@@ -18,13 +19,16 @@ export async function GET(request: Request) {
     // 1. Verify Wise using their public quotes API
     try {
         const wiseUrl = `https://wise.com/gateway/v3/quotes/`;
+        // Use the first configured corridor's currency. The Wise fee percentage
+        // structure is currency-independent — we only need any valid pair to read it.
+        const verifyCurrency = CORRIDORS[0]?.currencyCode ?? "AUD";
         const wiseRes = await fetch(wiseUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                sourceCurrency: "AUD",
+                sourceCurrency: verifyCurrency,
                 targetCurrency: "INR",
                 sourceAmount: 2000,
                 targetAmount: null,
