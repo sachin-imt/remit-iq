@@ -264,10 +264,12 @@ export default function HomePage() {
                     <td className="px-4 py-2.5"><div className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs" style={{ backgroundColor: p.color + "20", color: p.color }}>{p.abbr}</div>
                       <div><p className="text-slate-900 font-semibold text-sm">{p.name}</p>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 mt-0.5">
                           <Star className="w-3 h-3 text-[#F0B429] fill-[#F0B429]" /><span className="text-slate-500 text-xs">{p.stars}</span>
                           {p.badge && <span className="ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#F0B429]/20 text-[#F0B429]">{p.badge}</span>}
-                        </div></div>
+                        </div>
+                        {p.promoText && <p className="text-emerald-600 text-[10px] mt-0.5 font-medium flex items-center gap-1"><span className="text-[10px]">🎁</span> {p.promoText}</p>}
+                      </div>
                     </div></td>
                     <td className="px-4 py-2.5 text-right"><p className="text-slate-900 font-semibold text-sm">&#8377;{p.rate.toFixed(2)}</p><p className="text-slate-500 text-[10px]">{p.marginPct.toFixed(2)}% margin</p></td>
                     <td className="px-4 py-2.5 text-right"><p className={p.fee === 0 ? "text-emerald-400 font-semibold text-sm" : "text-slate-900 text-sm"}>{p.fee === 0 ? "FREE" : `$${p.fee.toFixed(2)}`}</p></td>
@@ -290,7 +292,11 @@ export default function HomePage() {
                   <div className="flex items-center gap-2">
                     <div className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs" style={{ backgroundColor: p.color + "20", color: p.color }}>{p.abbr}</div>
                     <div><p className="text-slate-900 font-semibold text-sm">{p.name}</p>
-                      {p.badge && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#F0B429]/20 text-[#F0B429]">{p.badge}</span>}</div>
+                      <div className="flex items-center gap-1">
+                        {p.badge && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#F0B429]/20 text-[#F0B429]">{p.badge}</span>}
+                      </div>
+                      {p.promoText && <p className="text-emerald-600 text-[10px] mt-0.5 font-medium flex items-center gap-1"><span className="text-[10px]">🎁</span> {p.promoText}</p>}
+                    </div>
                   </div>
                   {p.savings > 0 && <span className="text-emerald-400 text-xs font-semibold">+&#8377;{formatINR(p.savings)}</span>}
                 </div>
@@ -445,6 +451,7 @@ export default function HomePage() {
           ))}
         </div>
         <div className="text-slate-500 text-xs leading-relaxed text-center max-w-3xl mx-auto space-y-2">
+          <p><strong>Note:</strong> Rates shown are standard, ongoing rates for registered users. Many providers offer aggressive one-time promotional exchange rates or zero-fee incentives for your very first transfer.</p>
           <p>Every year, millions of Indians abroad send money home. The difference between the best and worst deal on a typical transfer can exceed &#8377;3,000. RemitIQ compares live remittance rates and uses AI to help you find the cheapest way to send money to India — no hidden fees, no conflicts of interest.</p>
         </div>
       </section>

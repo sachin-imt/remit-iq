@@ -127,7 +127,7 @@ export default function ComparePage() {
             </div>
             <div className="mt-4 pt-3 border-t border-slate-200/50 flex flex-col md:flex-row md:items-center justify-between gap-2">
               <div className="flex flex-wrap gap-2">{p.paymentMethods.map((m) => (<span key={m} className="text-[10px] px-2 py-0.5 rounded bg-white text-slate-500 border border-slate-200">{m}</span>))}</div>
-              {p.promoText && <p className="text-[#F0B429] text-xs font-medium">{p.promoText}</p>}
+              {p.promoText && <p className="text-emerald-600 text-xs font-medium flex items-center gap-1"><span className="text-xs">🎁</span> {p.promoText}</p>}
             </div>
           </div>
         ))}
@@ -135,6 +135,7 @@ export default function ComparePage() {
       <div className="mt-12 bg-white rounded-xl p-6">
         <h2 className="text-slate-900 font-bold mb-3">How We Compare</h2>
         <div className="text-slate-500 text-sm space-y-2">
+          <p><strong>Note:</strong> Rates shown are standard, ongoing rates for registered users. Many providers offer aggressive one-time promotional exchange rates or zero-fee incentives for your very first transfer.</p>
           <p>RemitIQ compares the total value of your transfer &mdash; not just the exchange rate. We calculate the exact INR amount you&apos;ll receive after all fees and FX margins.</p>
           <p>Rates are derived from real-time ECB mid-market data with provider-specific margins applied. Rankings are purely by value to you &mdash; we never boost rankings based on commercial relationships.</p>
         </div>

@@ -124,7 +124,6 @@ const topics: TopicHandler[] = [
                 `| Remitly | 0.56% | Solid ongoing rate |\n` +
                 `| Paysend | 0.50% | Low flat fee for card transfers |\n` +
                 `| WorldRemit | 0.70% | Great overall global reach |\n` +
-                `| Ria | 0.85% | Fast but higher margins |\n` +
                 `| XE | 0.90% | Highly trusted brand |\n` +
                 `| Instarem | 1.03% | Mid-tier competitor |\n` +
                 `| Xoom | 1.20% | PayPal integration, easy but pricey |\n` +
@@ -236,7 +235,7 @@ const topics: TopicHandler[] = [
                 `🥈 **Remitly** — Consistently solid rates\n` +
                 `🥉 **Paysend** — Lowest flat fee on many corridors\n` +
                 `4️⃣ **WorldRemit** — Extensive global reach\n` +
-                `**Others:** Ria, XE, Instarem, Xoom, and MoneyGram.\n` +
+                `**Others:** XE, Instarem, Xoom, and MoneyGram.\n` +
                 `**Best overall:** Wise (best sustained rate)\n` +
                 `**Best for small amounts:** Remitly or Paysend\n` +
                 `**Best for global parity:** WorldRemit or XE`,
@@ -269,7 +268,7 @@ const topics: TopicHandler[] = [
         handler: () => ({
             reply: `Transfer speeds from Australia to India:\n\n` +
                 `⚡ **Minutes:** Wise, Remitly, Western Union, Paysend\n` +
-                `📅 **Same day:** Instarem, Ria\n` +
+                `📅 **Same day:** Instarem\n` +
                 `📦 **1-2 business days:** XE\n\n` +
                 `Speed depends on:\n` +
                 `• **Payment method** — PayID/card = faster; bank transfer = slower\n` +
