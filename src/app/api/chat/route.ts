@@ -8,8 +8,24 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const message: string = body.message || "";
-    const currencyCode: string = body.currencyCode || "AUD";
-    const countryName: string = body.countryName || "Australia";
+    let currencyCode: string = body.currencyCode || "AUD";
+    let countryName: string = body.countryName || "Australia";
+
+    // Dynamic Context Override: If user explicitly asks about a different currency, switch context
+    const msgUpper = message.toUpperCase();
+    const currencyMap: Record<string, string> = {
+        "AUD": "Australia", "USD": "United States", "GBP": "United Kingdom",
+        "CAD": "Canada", "EUR": "Europe", "NZD": "New Zealand",
+        "SGD": "Singapore", "MYR": "Malaysia", "HKD": "Hong Kong"
+    };
+
+    for (const [code, country] of Object.entries(currencyMap)) {
+        if (msgUpper.match(new RegExp(`\\b${code}\\b`))) {
+            currencyCode = code;
+            countryName = country;
+            break;
+        }
+    }
 
     if (!message.trim()) {
       return NextResponse.json({
