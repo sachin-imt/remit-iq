@@ -26,6 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={inter.variable}>
       <head>
+        <meta name="impact-site-verification" content="47f4ee20-be86-4134-8b06-df3faf4e98a3" />
         <WebSiteSchema />
         <Suspense fallback={null}>
           <FacebookPixel />
