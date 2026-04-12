@@ -37,7 +37,7 @@ export const PROVIDER_DEFINITIONS = [
   { id: "instarem", name: "Instarem", abbr: "I", marginPct: 1.03, baseFee: 1.99, feePct: 0, promoBaseFee: 0, speed: "Same day", speedDays: 0.5, color: "#FBBF24", stars: 4.4, badge: null, paymentMethods: ["Bank Transfer", "PayID"], affiliateUrl: "https://instarem.prf.hn/click/camref:1101l5F4pg", promoText: "Use bonus code for $0 fees" as string | null, isLive: false, lastVerified: "2026-02-21", marginSource: "Manual check vs instarem.com" },
   { id: "xoom", name: "Xoom", abbr: "XM", marginPct: 1.65, baseFee: 2.99, feePct: 0, promoBaseFee: 0, speed: "Minutes", speedDays: 0, color: "#0284C7", stars: 4.2, badge: null, paymentMethods: ["PayPal", "Bank Transfer", "Debit Card"], affiliateUrl: "https://www.xoom.com/", promoText: "First transfer completely fee-free" as string | null, isLive: false, lastVerified: "2026-04-11", marginSource: "Industry average estimate" },
   { id: "moneygram", name: "MoneyGram", abbr: "MG", marginPct: 1.55, baseFee: 3.99, feePct: 0, promoBaseFee: 0, speed: "Minutes", speedDays: 0, color: "#E11D48", stars: 4.0, badge: null, paymentMethods: ["Bank Transfer", "Debit Card", "Cash"], affiliateUrl: "https://www.moneygram.com/", promoText: "Zero fees for new app users" as string | null, isLive: false, lastVerified: "2026-04-11", marginSource: "Industry average estimate" },
-  { id: "wu", name: "Western Union", abbr: "WU", marginPct: 1.86, baseFee: 4.99, feePct: 0, promoMarginPct: 0, promoBaseFee: 0, speed: "Minutes", speedDays: 0, color: "#F87171", stars: 3.9, badge: null, paymentMethods: ["Bank Transfer", "Debit Card", "Cash"], affiliateUrl: "https://www.westernunion.com/au/en/web/send-money/estimate-details", promoText: "Zero fees & 0% margin for new users" as string | null, isLive: false, lastVerified: "2026-02-21", marginSource: "Manual check vs westernunion.com" }
+  { id: "wu", name: "Western Union", abbr: "WU", marginPct: 1.86, baseFee: 4.99, feePct: 0, promoMarginPct: 0, promoBaseFee: 0, speed: "Minutes", speedDays: 0, color: "#F87171", stars: 3.9, badge: null, paymentMethods: ["Bank Transfer", "Debit Card", "Cash"], affiliateUrl: "https://www.westernunion.com", promoText: "Zero fees & 0% margin for new users" as string | null, isLive: false, lastVerified: "2026-02-21", marginSource: "Manual check vs westernunion.com" }
 ];
 
 /**
@@ -186,12 +186,15 @@ export function getAffiliateUrlWithAmount(
         remitlyDest.searchParams.set("amount", amount.toString());
         return `${baseUrl}?url=${encodeURIComponent(remitlyDest.toString())}`;
       }
-      case "wu":
-        url.searchParams.set("SendAmount", amount.toString());
-        url.searchParams.set("ReceiveCountry", "IN");
-        url.searchParams.set("ISOCurrency", "INR");
-        url.searchParams.set("SendCurrency", sourceCurrency);
-        break;
+      case "wu": {
+        // Build currency-aware WU deep-link (no affiliate — direct link only)
+        const wuUrl = new URL(`https://www.westernunion.com/${countryPath}/en/web/send-money/estimate-details`);
+        wuUrl.searchParams.set("SendAmount", amount.toString());
+        wuUrl.searchParams.set("ReceiveCountry", "IN");
+        wuUrl.searchParams.set("ISOCurrency", "INR");
+        wuUrl.searchParams.set("SendCurrency", sourceCurrency);
+        return wuUrl.toString();
+      }
       default:
         url.searchParams.set("amount", amount.toString());
         break;
