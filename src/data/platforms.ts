@@ -15,6 +15,9 @@ export interface Platform {
   marginPct: number; // FX margin as a percentage of mid-market rate
   baseFee: number;
   feePct: number;
+  promoMarginPct?: number; // Optional override for first-time user margin
+  promoBaseFee?: number;   // Optional override for first-time user fee
+  promoFeePct?: number;    // Optional override for first-time user fee percentage
 }
 
 /**
@@ -26,16 +29,15 @@ export interface Platform {
  * marginSource: where the margin data comes from
  */
 export const PROVIDER_DEFINITIONS = [
-  { id: "wise", name: "Wise", abbr: "W", marginPct: 0, baseFee: 0.42, feePct: 0.50, speed: "Minutes", speedDays: 0, color: "#00B9FF", stars: 4.8, badge: "BEST RATE" as string | null, paymentMethods: ["Bank Transfer", "Debit Card", "PayID"], affiliateUrl: "https://wise.prf.hn/click/camref:1011l5DtXH", promoText: "First transfer free for new users" as string | null, isLive: true, lastVerified: "2026-03-02", marginSource: "Wise public API" },
-  { id: "remitly", name: "Remitly", abbr: "R", marginPct: 0.56, baseFee: 0, feePct: 0, speed: "Minutes", speedDays: 0, color: "#FF6B35", stars: 4.7, badge: null, paymentMethods: ["Bank Transfer", "Debit Card"], affiliateUrl: "https://remitly.tod8mp.net/c/7076716/663350/10408", promoText: null, isLive: false, lastVerified: "2026-04-11", marginSource: "Manual check vs remitly.com" },
-  { id: "paysend", name: "Paysend", abbr: "PS", marginPct: 0.45, baseFee: 2.00, feePct: 0, speed: "Minutes", speedDays: 0, color: "#8B5CF6", stars: 4.6, badge: null, paymentMethods: ["Debit Card", "Bank Transfer"], affiliateUrl: "https://paysend.com/", promoText: "Low flat fees globally" as string | null, isLive: false, lastVerified: "2026-04-11", marginSource: "Industry average estimate" },
-  { id: "worldremit", name: "WorldRemit", abbr: "WR", marginPct: 0.65, baseFee: 1.99, feePct: 0, speed: "Minutes", speedDays: 0, color: "#8E24AA", stars: 4.5, badge: null, paymentMethods: ["Bank Transfer", "Debit Card"], affiliateUrl: "https://www.worldremit.com/", promoText: "First 3 transfers free with code" as string | null, isLive: false, lastVerified: "2026-04-11", marginSource: "Industry average estimate" },
-
-  { id: "xe", name: "XE Money Transfer", abbr: "XE", marginPct: 1.10, baseFee: 0.00, feePct: 0, speed: "1-2 days", speedDays: 2, color: "#14B8A6", stars: 4.5, badge: null, paymentMethods: ["Bank Transfer"], affiliateUrl: "https://www.xe.com/", promoText: null, isLive: false, lastVerified: "2026-04-11", marginSource: "Industry average estimate" },
-  { id: "instarem", name: "Instarem", abbr: "I", marginPct: 1.03, baseFee: 1.99, feePct: 0, speed: "Same day", speedDays: 0.5, color: "#FBBF24", stars: 4.4, badge: null, paymentMethods: ["Bank Transfer", "PayID"], affiliateUrl: "https://instarem.prf.hn/click/camref:1101l5F4pg", promoText: null, isLive: false, lastVerified: "2026-02-21", marginSource: "Manual check vs instarem.com" },
-  { id: "xoom", name: "Xoom", abbr: "XM", marginPct: 1.65, baseFee: 2.99, feePct: 0, speed: "Minutes", speedDays: 0, color: "#0284C7", stars: 4.2, badge: null, paymentMethods: ["PayPal", "Bank Transfer", "Debit Card"], affiliateUrl: "https://www.xoom.com/", promoText: null, isLive: false, lastVerified: "2026-04-11", marginSource: "Industry average estimate" },
-  { id: "moneygram", name: "MoneyGram", abbr: "MG", marginPct: 1.55, baseFee: 3.99, feePct: 0, speed: "Minutes", speedDays: 0, color: "#E11D48", stars: 4.0, badge: null, paymentMethods: ["Bank Transfer", "Debit Card", "Cash"], affiliateUrl: "https://www.moneygram.com/", promoText: null, isLive: false, lastVerified: "2026-04-11", marginSource: "Industry average estimate" },
-  { id: "wu", name: "Western Union", abbr: "WU", marginPct: 1.86, baseFee: 4.99, feePct: 0, speed: "Minutes", speedDays: 0, color: "#F87171", stars: 3.9, badge: null, paymentMethods: ["Bank Transfer", "Debit Card", "Cash"], affiliateUrl: "https://www.westernunion.com/au/en/web/send-money/estimate-details", promoText: "Zero fees & 0% margin for new users" as string | null, isLive: false, lastVerified: "2026-02-21", marginSource: "Manual check vs westernunion.com" },
+  { id: "wise", name: "Wise", abbr: "W", marginPct: 0, baseFee: 0.42, feePct: 0.50, promoBaseFee: 0, promoFeePct: 0, speed: "Minutes", speedDays: 0, color: "#00B9FF", stars: 4.8, badge: "BEST RATE" as string | null, paymentMethods: ["Bank Transfer", "Debit Card", "PayID"], affiliateUrl: "https://wise.prf.hn/click/camref:1011l5DtXH", promoText: "First transfer fee free" as string | null, isLive: true, lastVerified: "2026-03-02", marginSource: "Wise public API" },
+  { id: "remitly", name: "Remitly", abbr: "R", marginPct: 0.56, baseFee: 0, feePct: 0, promoMarginPct: 0.06, speed: "Minutes", speedDays: 0, color: "#FF6B35", stars: 4.7, badge: null, paymentMethods: ["Bank Transfer", "Debit Card"], affiliateUrl: "https://remitly.tod8mp.net/c/7076716/663350/10408", promoText: "Special zero margin for new users" as string | null, isLive: false, lastVerified: "2026-04-11", marginSource: "Manual check vs remitly.com" },
+  { id: "paysend", name: "Paysend", abbr: "PS", marginPct: 0.45, baseFee: 2.00, feePct: 0, promoMarginPct: 0, promoBaseFee: 0, speed: "Minutes", speedDays: 0, color: "#8B5CF6", stars: 4.6, badge: null, paymentMethods: ["Debit Card", "Bank Transfer"], affiliateUrl: "https://paysend.com/", promoText: "Zero fee & 0% margin on first send" as string | null, isLive: false, lastVerified: "2026-04-11", marginSource: "Industry average estimate" },
+  { id: "worldremit", name: "WorldRemit", abbr: "WR", marginPct: 0.65, baseFee: 1.99, feePct: 0, promoBaseFee: 0, speed: "Minutes", speedDays: 0, color: "#8E24AA", stars: 4.5, badge: null, paymentMethods: ["Bank Transfer", "Debit Card"], affiliateUrl: "https://www.worldremit.com/", promoText: "First 3 transfers free with code" as string | null, isLive: false, lastVerified: "2026-04-11", marginSource: "Industry average estimate" },
+  { id: "xe", name: "XE Money Transfer", abbr: "XE", marginPct: 1.10, baseFee: 0.00, feePct: 0, promoMarginPct: 0.50, speed: "1-2 days", speedDays: 2, color: "#14B8A6", stars: 4.5, badge: null, paymentMethods: ["Bank Transfer"], affiliateUrl: "https://www.xe.com/", promoText: "Special rate for your first transfer" as string | null, isLive: false, lastVerified: "2026-04-11", marginSource: "Industry average estimate" },
+  { id: "instarem", name: "Instarem", abbr: "I", marginPct: 1.03, baseFee: 1.99, feePct: 0, promoBaseFee: 0, speed: "Same day", speedDays: 0.5, color: "#FBBF24", stars: 4.4, badge: null, paymentMethods: ["Bank Transfer", "PayID"], affiliateUrl: "https://instarem.prf.hn/click/camref:1101l5F4pg", promoText: "Use bonus code for $0 fees" as string | null, isLive: false, lastVerified: "2026-02-21", marginSource: "Manual check vs instarem.com" },
+  { id: "xoom", name: "Xoom", abbr: "XM", marginPct: 1.65, baseFee: 2.99, feePct: 0, promoBaseFee: 0, speed: "Minutes", speedDays: 0, color: "#0284C7", stars: 4.2, badge: null, paymentMethods: ["PayPal", "Bank Transfer", "Debit Card"], affiliateUrl: "https://www.xoom.com/", promoText: "First transfer completely fee-free" as string | null, isLive: false, lastVerified: "2026-04-11", marginSource: "Industry average estimate" },
+  { id: "moneygram", name: "MoneyGram", abbr: "MG", marginPct: 1.55, baseFee: 3.99, feePct: 0, promoBaseFee: 0, speed: "Minutes", speedDays: 0, color: "#E11D48", stars: 4.0, badge: null, paymentMethods: ["Bank Transfer", "Debit Card", "Cash"], affiliateUrl: "https://www.moneygram.com/", promoText: "Zero fees for new app users" as string | null, isLive: false, lastVerified: "2026-04-11", marginSource: "Industry average estimate" },
+  { id: "wu", name: "Western Union", abbr: "WU", marginPct: 1.86, baseFee: 4.99, feePct: 0, promoMarginPct: 0, promoBaseFee: 0, speed: "Minutes", speedDays: 0, color: "#F87171", stars: 3.9, badge: null, paymentMethods: ["Bank Transfer", "Debit Card", "Cash"], affiliateUrl: "https://www.westernunion.com/au/en/web/send-money/estimate-details", promoText: "Zero fees & 0% margin for new users" as string | null, isLive: false, lastVerified: "2026-02-21", marginSource: "Manual check vs westernunion.com" }
 ];
 
 /**
@@ -45,16 +47,31 @@ export const PROVIDER_DEFINITIONS = [
 export function getPlatforms(
   midMarketRate: number,
   amount: number = 2000,
-  dynamicConfigs?: { platform_id: string; margin_pct: number; base_fee: number; fee_pct: number; promo_margin_pct: number | null; promo_cap: number | null }[]
+  dynamicConfigs?: { platform_id: string; margin_pct: number; base_fee: number; fee_pct: number; promo_margin_pct: number | null; promo_cap: number | null }[],
+  isFirstTimeUser: boolean = false
 ): Platform[] {
   return PROVIDER_DEFINITIONS.map((baseDef) => {
     // Override with dynamic config from DB if provided
     const config = dynamicConfigs?.find((c) => c.platform_id === baseDef.id);
+    
+    // Determine active margin/fee components based on promo state
+    const activeMarginPct = isFirstTimeUser && baseDef.promoMarginPct !== undefined 
+      ? baseDef.promoMarginPct 
+      : (config?.margin_pct ?? baseDef.marginPct);
+      
+    const activeBaseFee = isFirstTimeUser && baseDef.promoBaseFee !== undefined
+      ? baseDef.promoBaseFee
+      : (config?.base_fee ?? baseDef.baseFee);
+
+    const activeFeePct = isFirstTimeUser && baseDef.promoFeePct !== undefined
+      ? baseDef.promoFeePct
+      : (config?.fee_pct ?? baseDef.feePct);
+
     const p = {
       ...baseDef,
-      marginPct: config?.margin_pct ?? baseDef.marginPct,
-      baseFee: config?.base_fee ?? baseDef.baseFee,
-      feePct: config?.fee_pct ?? baseDef.feePct,
+      marginPct: activeMarginPct,
+      baseFee: activeBaseFee,
+      feePct: activeFeePct,
     };
 
     let effectiveRate = 0;
@@ -98,11 +115,12 @@ export function formatINR(n: number): string {
 export function getRankedPlatforms(
   amount: number,
   midMarketRate?: number,
-  dynamicConfigs?: { platform_id: string; margin_pct: number; base_fee: number; fee_pct: number; }[]
+  dynamicConfigs?: { platform_id: string; margin_pct: number; base_fee: number; fee_pct: number; }[],
+  isFirstTimeUser: boolean = false
 ) {
   const platforms = midMarketRate
-    ? getPlatforms(midMarketRate, amount, dynamicConfigs)
-    : getPlatforms(DEFAULT_MID_MARKET_RATE, amount, dynamicConfigs);
+    ? getPlatforms(midMarketRate, amount, dynamicConfigs, isFirstTimeUser)
+    : getPlatforms(DEFAULT_MID_MARKET_RATE, amount, dynamicConfigs, isFirstTimeUser);
   const ranked = platforms.map((p) => ({
     ...p,
     received: calcReceived(amount, p.rate, p.fee),

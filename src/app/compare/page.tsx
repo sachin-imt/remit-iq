@@ -14,6 +14,7 @@ export default function ComparePage() {
   const [midMarketRate, setMidMarketRate] = useState(DEFAULT_MID_MARKET_RATE);
   const [dataSource, setDataSource] = useState<string>("cached");
   const [providerConfigs, setProviderConfigs] = useState<any[] | undefined>(undefined);
+  const [isFirstTimeUser, setIsFirstTimeUser] = useState(false);
   const { currencyCode, pairLabel } = useCountry();
 
   useEffect(() => {
@@ -34,7 +35,7 @@ export default function ComparePage() {
   }, [currencyCode]);
 
   const ranked = useMemo(() => {
-    const platforms = getPlatforms(midMarketRate, amount, providerConfigs);
+    const platforms = getPlatforms(midMarketRate, amount, providerConfigs, isFirstTimeUser);
     const list = platforms.map((p) => ({
       ...p,
       received: calcReceived(amount, p.rate, p.fee),
@@ -51,7 +52,7 @@ export default function ComparePage() {
     const worst = [...list].sort((a, b) => a.received - b.received)[0].received;
     list.forEach((p) => { p.savings = p.received - worst; });
     return list;
-  }, [amount, sortBy, midMarketRate, providerConfigs]);
+  }, [amount, sortBy, midMarketRate, providerConfigs, isFirstTimeUser]);
 
   const best = ranked[0];
   const worst = ranked[ranked.length - 1];
@@ -95,6 +96,22 @@ export default function ComparePage() {
           </select>
         </div>
       </div>
+      {/* New User Rate Toggle */}
+      <div className="mb-6 flex items-center gap-3">
+        <button
+          onClick={() => setIsFirstTimeUser(!isFirstTimeUser)}
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isFirstTimeUser ? "bg-emerald-500" : "bg-slate-300"}`}
+          role="switch"
+          aria-checked={isFirstTimeUser}
+          aria-label="Toggle new user promotional rates"
+        >
+          <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${isFirstTimeUser ? "translate-x-6" : "translate-x-1"}`} />
+        </button>
+        <div>
+          <span className="text-slate-900 text-sm font-semibold">New User Rates</span>
+          <span className="text-slate-500 text-xs ml-2">{isFirstTimeUser ? "Showing first-time registration promos" : "Showing standard rates for existing users"}</span>
+        </div>
+      </div>
       {maxSavings > 0 && (
         <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 mb-6">
           <p className="text-emerald-400 font-semibold">Save up to &#8377;{formatINR(maxSavings)} by choosing {best.name} over {worst.name} on a {currencyCode} {amount.toLocaleString()} transfer.</p>
@@ -135,7 +152,7 @@ export default function ComparePage() {
       <div className="mt-12 bg-white rounded-xl p-6">
         <h2 className="text-slate-900 font-bold mb-3">How We Compare</h2>
         <div className="text-slate-500 text-sm space-y-2">
-          <p><strong>Note:</strong> Rates shown are standard, ongoing rates for registered users. Many providers offer aggressive one-time promotional exchange rates or zero-fee incentives for your very first transfer.</p>
+          <p><strong>Note:</strong> {isFirstTimeUser ? "Rates shown reflect first-time user promotional offers. These are typically one-time incentives for your very first transfer — switch the toggle off to see standard ongoing rates." : "Rates shown are standard, ongoing rates for registered users. Toggle \"New User Rates\" above to see first-time registration promos across all providers."}</p>
           <p>RemitIQ compares the total value of your transfer &mdash; not just the exchange rate. We calculate the exact INR amount you&apos;ll receive after all fees and FX margins.</p>
           <p>Rates are derived from real-time ECB mid-market data with provider-specific margins applied. Rankings are purely by value to you &mdash; we never boost rankings based on commercial relationships.</p>
         </div>

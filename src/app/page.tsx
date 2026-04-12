@@ -113,6 +113,7 @@ export default function HomePage() {
   const [intelligence, setIntelligence] = useState<IntelligenceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [shared, setShared] = useState(false);
+  const [isFirstTimeUser, setIsFirstTimeUser] = useState(false);
   const { currencyCode, pairLabel, country } = useCountry();
 
   useEffect(() => {
@@ -144,7 +145,7 @@ export default function HomePage() {
   const dataSource = intelligence?.dataSource ?? "fallback";
 
   const ranked: RankedPlatform[] = useMemo(() => {
-    const platforms = getPlatforms(midMarketRate, amount, intelligence?.providerConfigs);
+    const platforms = getPlatforms(midMarketRate, amount, intelligence?.providerConfigs, isFirstTimeUser);
     return platforms
       .map((p) => {
         const received = calcReceived(amount, p.rate, p.fee);
@@ -152,7 +153,7 @@ export default function HomePage() {
       })
       .sort((a, b) => b.received - a.received)
       .map((p, _i, arr) => ({ ...p, savings: p.received - arr[arr.length - 1].received }));
-  }, [amount, midMarketRate, intelligence?.providerConfigs]);
+  }, [amount, midMarketRate, intelligence?.providerConfigs, isFirstTimeUser]);
 
   const handleAmountChange = (val: string) => {
     const numStr = val.replace(/[^0-9]/g, "");
@@ -176,17 +177,16 @@ export default function HomePage() {
     <div>
       {/* Compact Hero */}
       <section className="relative overflow-hidden">
-        <div className="mx-auto max-w-6xl px-4 pt-10 pb-6 relative z-10">
-          <div className="text-center max-w-3xl mx-auto mb-8">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 leading-tight mb-4 tracking-tight">
-              Smarter transfers to India.<br className="hidden md:block" /> Compare <span className="text-gradient">live rates</span> effortlessly.
+        <div className="mx-auto max-w-6xl px-4 pt-6 pb-4 relative z-10">
+          <div className="text-center max-w-3xl mx-auto mb-4">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-slate-900 leading-tight mb-2 tracking-tight">
+              Compare <span className="text-gradient">live rates</span> to send money to India
             </h1>
-            <p className="text-slate-500 text-lg md:text-xl font-medium max-w-2xl mx-auto">Our AI analyzes real-time remittance data across 6+ platforms to find you the absolute cheapest way to send money home.</p>
+            <p className="text-slate-500 text-sm md:text-base font-medium max-w-xl mx-auto">AI-powered comparison across 9 platforms. Find the cheapest way to send money home.</p>
           </div>
-          {/* Amount Input — full width with step guidance */}
+          {/* Amount Input */}
           <div className="max-w-2xl mx-auto mb-3">
             <label className="flex items-center gap-2 text-slate-500 text-xs font-medium mb-1.5 ml-1">
-              <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#F0B429]/20 text-[#F0B429] text-[10px] font-bold">1</span>
               Select your country and enter amount
             </label>
             <div className="relative group shadow-2xl shadow-yellow-500/10 rounded-2xl">
@@ -199,8 +199,8 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Timing Signal — full width below input */}
-          <div className="max-w-2xl mx-auto mb-2">
+          {/* Timing Signal */}
+          <div className="max-w-2xl mx-auto mb-1">
             {loading ? (
               <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center justify-center gap-2">
                 <Loader2 className="w-4 h-4 text-[#F0B429] animate-spin" />
@@ -245,12 +245,26 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Comparison Table — tighter rows */}
-      <section className="mx-auto max-w-6xl px-4 pb-8 z-10 relative">
+      {/* Comparison Table */}
+      <section className="mx-auto max-w-6xl px-4 pb-8 z-10 relative -mt-2">
         <div className="glass-panel rounded-3xl overflow-hidden border border-white/60">
-          <div className="px-6 py-4 border-b border-slate-200/60 flex items-center justify-between bg-white/40">
-            <h2 className="text-slate-900 font-bold text-sm">Sending {currencyCode} {amount.toLocaleString()} to India</h2>
-            <p className="text-slate-500 text-xs">Mid-market: &#8377;{midMarketRate.toFixed(2)} | {dataSource === "live" ? "Live rates" : "Updated just now"}</p>
+          <div className="px-6 py-4 border-b border-slate-200/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white/40">
+            <div>
+              <h2 className="text-slate-900 font-bold text-sm">Sending {currencyCode} {amount.toLocaleString()} to India</h2>
+              <p className="text-slate-500 text-xs">Mid-market: &#8377;{midMarketRate.toFixed(2)} | {dataSource === "live" ? "Live rates" : "Updated just now"}</p>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <button
+                onClick={() => setIsFirstTimeUser(!isFirstTimeUser)}
+                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${isFirstTimeUser ? "bg-emerald-500" : "bg-slate-300"}`}
+                role="switch"
+                aria-checked={isFirstTimeUser}
+                aria-label="Toggle new user promotional rates"
+              >
+                <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${isFirstTimeUser ? "translate-x-[18px]" : "translate-x-0.5"}`} />
+              </button>
+              <span className="text-xs font-semibold text-slate-700">New User Rates</span>
+            </div>
           </div>
           <div className="hidden md:block">
             <table className="w-full">
@@ -451,7 +465,7 @@ export default function HomePage() {
           ))}
         </div>
         <div className="text-slate-500 text-xs leading-relaxed text-center max-w-3xl mx-auto space-y-2">
-          <p><strong>Note:</strong> Rates shown are standard, ongoing rates for registered users. Many providers offer aggressive one-time promotional exchange rates or zero-fee incentives for your very first transfer.</p>
+          <p><strong>Note:</strong> {isFirstTimeUser ? "Rates shown reflect first-time user promotional offers. These are typically one-time incentives — switch the \"New User Rates\" toggle off to see standard ongoing rates." : "Rates shown are standard, ongoing rates for registered users. Toggle \"New User Rates\" in the comparison table to see first-time registration promos across all providers."}</p>
           <p>Every year, millions of Indians abroad send money home. The difference between the best and worst deal on a typical transfer can exceed &#8377;3,000. RemitIQ compares live remittance rates and uses AI to help you find the cheapest way to send money to India — no hidden fees, no conflicts of interest.</p>
         </div>
       </section>
