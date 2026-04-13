@@ -8,6 +8,9 @@
 
 export const GOOGLE_ADS_ID = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID ?? "";
 
+// Conversion labels from Google Ads > Goals > Conversions
+const CONVERSION_PROVIDER_CLICK = `${GOOGLE_ADS_ID}/zH3SCI76kJscENX80KFC`;
+
 declare global {
   interface Window {
     gtag?: (...args: unknown[]) => void;
@@ -24,15 +27,21 @@ export function trackProviderClick(
 ) {
   if (typeof window === "undefined" || !window.gtag || !GOOGLE_ADS_ID) return;
 
-  // Standard GA4-style event — configure a conversion in Google Ads to match
+  // Fire the specific conversion action (AW-17787272789/zH3SCI76kJscENX80KFC = "Provider Click")
+  window.gtag("event", "conversion", {
+    send_to: CONVERSION_PROVIDER_CLICK,
+    value: amount,
+    currency: "AUD",
+    transaction_id: `${providerId}-${Date.now()}`,
+  });
+
+  // Also fire a named event for GA4 reporting
   window.gtag("event", "provider_click", {
     send_to: GOOGLE_ADS_ID,
     provider_id: providerId,
     provider_name: providerName,
     transfer_amount: amount,
-    currency,
-    value: amount,          // used for conversion value reporting
-    currency_code: "AUD",   // reporting currency
+    source_currency: currency,
   });
 }
 
