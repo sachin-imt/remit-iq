@@ -10,6 +10,7 @@ import { WebSiteSchema } from "@/components/JsonLd";
 import { CountryProvider } from "@/components/CountryContext";
 import { Suspense } from "react";
 import Script from "next/script";
+import GoogleAdsTag from "@/components/GoogleAdsTag";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -32,6 +33,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <FacebookPixel />
         </Suspense>
       </head>
+      {/* Google Ads Tag — conversion tracking */}
+      <GoogleAdsTag />
       {/* Google AdSense — loads after page is interactive so it never blocks LCP */}
       <Script
         async

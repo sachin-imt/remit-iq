@@ -4,6 +4,7 @@ import { ArrowUpRight, Star, CheckCircle, Zap, Clock, Loader2 } from "lucide-rea
 import { getRankedPlatforms, formatINR, DEFAULT_MID_MARKET_RATE, getPlatforms, calcReceived, getAffiliateUrlWithAmount } from "@/data/platforms";
 import { useCountry } from "@/components/CountryContext";
 import CountrySelector from "@/components/CountrySelector";
+import { trackProviderClick, trackComparePageView } from "@/lib/gtag";
 
 type SortKey = "received" | "rate" | "fee" | "speed" | "stars";
 
@@ -16,6 +17,12 @@ export default function ComparePage() {
   const [providerConfigs, setProviderConfigs] = useState<any[] | undefined>(undefined);
   const [isFirstTimeUser, setIsFirstTimeUser] = useState(false);
   const { currencyCode, pairLabel } = useCountry();
+
+  // Fire Google Ads page-view conversion once on mount
+  useEffect(() => {
+    trackComparePageView(currencyCode);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -138,6 +145,7 @@ export default function ComparePage() {
               </div>
               <div className="md:w-32 flex md:justify-end">
                 <a href={getAffiliateUrlWithAmount(p.id, p.affiliateUrl, amount, "compare", currencyCode)} target="_blank" rel="noopener noreferrer sponsored"
+                  onClick={() => trackProviderClick(p.id, p.name, amount, currencyCode)}
                   className={`inline-flex items-center gap-1.5 px-5 py-3 rounded-xl font-semibold text-sm transition-all w-full md:w-auto justify-center ${i === 0 ? "bg-[#F0B429] text-slate-900 hover:bg-yellow-400 glow-gold" : "bg-slate-100/50 text-slate-700 hover:bg-slate-100"}`}>
                   Send Now <ArrowUpRight className="w-4 h-4" /></a>
               </div>

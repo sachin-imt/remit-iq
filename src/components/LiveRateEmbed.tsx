@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { formatINR, getPlatforms, calcReceived, DEFAULT_MID_MARKET_RATE, getAffiliateUrlWithAmount } from "@/data/platforms";
 import { ArrowUpRight, Loader2, Star, Zap } from "lucide-react";
+import { trackProviderClick } from "@/lib/gtag";
 import { useCountry } from "./CountryContext";
 
 export default function LiveRateEmbed({ providerA, providerB }: { providerA: string, providerB: string }) {
@@ -98,6 +99,7 @@ export default function LiveRateEmbed({ providerA, providerB }: { providerA: str
                         </div>
 
                         <a href={getAffiliateUrlWithAmount(p.id, p.affiliateUrl, amount, "blog-embed", currencyCode)} target="_blank" rel="noopener noreferrer sponsored"
+                            onClick={() => trackProviderClick(p.id, p.name, amount, currencyCode)}
                             className={`w-full inline-flex justify-center items-center gap-1.5 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${p.id === winner.id ? 'bg-[#F0B429] text-slate-900 hover:bg-yellow-400 glow-gold' : 'bg-slate-100/50 text-slate-700 hover:bg-slate-100'}`}>
                             Transfer via {p.name} <ArrowUpRight className="w-4 h-4" />
                         </a>

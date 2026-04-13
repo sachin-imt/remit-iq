@@ -5,6 +5,7 @@ import { ArrowUpRight, TrendingUp, Clock, Bell, Shield, Zap, ChevronRight, Star,
 import { getRankedPlatforms, formatINR, DEFAULT_MID_MARKET_RATE, getPlatforms, calcReceived, getAffiliateUrlWithAmount } from "@/data/platforms";
 import { useCountry } from "@/components/CountryContext";
 import CountrySelector from "@/components/CountrySelector";
+import { trackProviderClick } from "@/lib/gtag";
 
 interface SignalFactor {
   name: string;
@@ -291,6 +292,7 @@ export default function HomePage() {
                     <td className="px-4 py-2.5 text-center"><span className="text-slate-500 text-sm">{p.speed}</span></td>
                     <td className="px-4 py-2.5 text-right">{p.savings > 0 ? <p className="text-emerald-400 font-semibold text-sm">+&#8377;{formatINR(p.savings)}</p> : <p className="text-slate-500 text-xs">baseline</p>}</td>
                     <td className="px-4 py-3"><a href={getAffiliateUrlWithAmount(p.id, p.affiliateUrl, amount, "homepage", currencyCode)} target="_blank" rel="noopener noreferrer sponsored"
+                      onClick={() => trackProviderClick(p.id, p.name, amount, currencyCode)}
                       className={`inline-flex items-center justify-center gap-1 px-4 py-2 rounded-xl font-bold text-sm transition-all w-24 ${i === 0 ? "btn-primary" : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:shadow-md hover:-translate-y-0.5"}`}>
                       Send</a></td>
                   </tr>
@@ -318,6 +320,7 @@ export default function HomePage() {
                   <div><p className="text-slate-900 font-bold text-lg">&#8377;{formatINR(p.received)}</p>
                     <p className="text-slate-500 text-xs">Rate: &#8377;{p.rate.toFixed(2)} &middot; Fee: {p.fee === 0 ? "Free" : `$${p.fee}`} &middot; {p.speed}</p></div>
                   <a href={getAffiliateUrlWithAmount(p.id, p.affiliateUrl, amount, "homepage-mobile", currencyCode)} target="_blank" rel="noopener noreferrer sponsored"
+                    onClick={() => trackProviderClick(p.id, p.name, amount, currencyCode)}
                     className={`px-5 py-2.5 rounded-xl font-bold text-sm shadow-sm transition-all ${i === 0 ? "btn-primary" : "bg-white border border-slate-200 text-slate-700"}`}>Send</a>
                 </div>
               </div>
