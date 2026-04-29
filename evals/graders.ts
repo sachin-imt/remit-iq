@@ -72,19 +72,21 @@ function gradeRegex(output: string, g: RegexGrader): GraderOutcome {
 }
 
 /**
- * LLM-as-judge grader.
+ * LLM-as-judge grader — with Chain-of-Thought reasoning.
  *
  * HOW IT WORKS:
  *   1. We give the judge model the output + a plain-English criterion
- *   2. The judge scores 1–5 and provides a one-sentence reason
- *   3. If score >= passMark (default 4), the grader passes
+ *   2. The judge REASONS FIRST (chain-of-thought) before scoring
+ *   3. Then it outputs a score 1–5 with a one-line summary
+ *   4. If score >= passMark (default 4), the grader passes
  *
- * WHY THIS MATTERS:
- *   Rules can't tell you if a response is helpful, accurate, or well-reasoned.
- *   A judge LLM can — it reads the response the way a human would.
+ * WHY CHAIN-OF-THOUGHT?
+ *   Research shows asking the judge to reason BEFORE scoring improves
+ *   alignment with human judgments by ~20%. Without CoT, the judge
+ *   pattern-matches on surface features. With CoT, it actually evaluates.
+ *   (Video: "How to Systematically Setup LLM Evals" — section on judge reliability)
  *
- * NOTE: This costs API tokens. Run it in a dedicated "expensive eval" suite,
- *       not in every CI build. Cheap graders should run every time.
+ * NOTE: This costs API tokens. Run it in dedicated suites, not every CI build.
  */
 async function gradeLLMJudge(
   output: string,
@@ -92,6 +94,8 @@ async function gradeLLMJudge(
 ): Promise<GraderOutcome> {
   const passMark = g.passMark ?? 4;
 
+  // Chain-of-thought prompt: model reasons first, THEN produces the JSON score.
+  // The thinking field forces the model to analyse before committing to a number.
   const judgePrompt = `You are an expert evaluator grading an AI assistant's response.
 
 ## Criterion to assess
@@ -102,20 +106,26 @@ ${g.criteria}
 ${output}
 """
 
-## Scoring
-Rate how well the response meets the criterion on a 1–5 scale:
-- 1: Completely fails (criterion is ignored or contradicted)
-- 2: Mostly fails (criterion barely addressed)
-- 3: Partially meets (criterion met but with significant gaps)
-- 4: Mostly meets (criterion well-addressed with minor gaps)
-- 5: Fully meets (criterion clearly and completely satisfied)
+## Your task
+First, think through whether the response meets the criterion — consider what it does well and where it falls short. Then produce your verdict as JSON.
 
-Respond ONLY with valid JSON in this exact format — no other text:
-{"score": <integer 1-5>, "reason": "<one concise sentence explaining your score>"}`;
+Respond in this exact format (the "thinking" field comes first):
+{
+  "thinking": "<your step-by-step analysis of how well the response meets the criterion>",
+  "score": <integer 1-5>,
+  "reason": "<one concise sentence summarising your verdict>"
+}
+
+Score scale:
+- 1: Completely fails the criterion
+- 2: Mostly fails
+- 3: Partially meets (notable gaps)
+- 4: Mostly meets (minor gaps only)
+- 5: Fully and clearly meets the criterion`;
 
   const response = await anthropic.messages.create({
     model: "claude-haiku-4-5",
-    max_tokens: 256,
+    max_tokens: 512,
     messages: [{ role: "user", content: judgePrompt }],
   });
 
@@ -124,13 +134,33 @@ Respond ONLY with valid JSON in this exact format — no other text:
 
   let score = 1;
   let reason = "parse error";
+  let thinking = "";
 
   try {
-    const parsed = JSON.parse(text) as { score: number; reason: string };
+    const parsed = JSON.parse(text) as { thinking?: string; score: number; reason: string };
     score = parsed.score;
     reason = parsed.reason;
+    thinking = parsed.thinking ?? "";
   } catch {
-    reason = `JSON parse failed. Raw: ${text.slice(0, 100)}`;
+    // Judge sometimes wraps JSON in markdown — try to extract it
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        const parsed = JSON.parse(jsonMatch[0]) as { thinking?: string; score: number; reason: string };
+        score = parsed.score;
+        reason = parsed.reason;
+        thinking = parsed.thinking ?? "";
+      } catch {
+        reason = `JSON parse failed. Raw: ${text.slice(0, 120)}`;
+      }
+    } else {
+      reason = `No JSON found. Raw: ${text.slice(0, 120)}`;
+    }
+  }
+
+  // Expose the thinking in verbose mode
+  if (process.env.VERBOSE === "1" && thinking) {
+    console.log(`   [judge thinking] ${thinking.slice(0, 200)}${thinking.length > 200 ? "…" : ""}`);
   }
 
   const passed = score >= passMark;

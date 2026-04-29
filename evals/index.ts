@@ -7,60 +7,37 @@
  * WHAT ARE AI EVALS?
  *
  * An "eval" (short for evaluation) is a structured test that measures how well
- * an AI system performs on a specific task. Think of it like a test suite for
- * your AI — similar to unit tests in software, but for model behaviour.
+ * an AI system performs on a specific task.
  *
- * Unlike traditional tests that check if code returns the right value, evals
- * check things like:
- *   - Does the chatbot mention the right signal? (contains grader)
- *   - Does it stay on-topic? (not-contains grader)
- *   - Is the response helpful and well-reasoned? (llm-judge grader)
- *
- * WHY THEY MATTER:
- *   Every time you change a system prompt, update business logic, or swap a
- *   model, your evals tell you whether the change made things better or worse.
- *   Without evals, you're flying blind — you "feel" like it improved, but you
- *   have no data.
+ * Every eval has three parts (Data-Task-Scores framework from Braintrust):
+ *   DATA  → EvalCase.input  — what you feed to the system
+ *   TASK  → the `fn` passed to runSuite — calls Claude, runs logic, etc.
+ *   SCORE → EvalCase.graders — measures whether the output is good
  *
  * ─────────────────────────────────────────────────────────────────────────────
- * REMITIQ EVAL STRUCTURE:
+ * SUITE OVERVIEW:
  *
- *   Suite 01 — Chat Intent Matching
- *     Tests matchIntent() — the rule-based pattern matcher.
- *     Free. Instant. Run on every commit.
- *
- *   Suite 02 — System Prompt Quality
- *     Tests buildSystemPrompt() — verifies live data injection.
- *     Free. Instant. Run on every commit.
- *
- *   Suite 03 — Technical Indicator Math (03a–03f)
- *     Tests computeRSI, computeSMA, etc. — the signal math engine.
- *     Free. Instant. Run on every commit.
- *
- *   Suite 04 — Claude Chat Quality (LLM-as-Judge)
- *     Tests real Claude API responses using haiku as judge.
- *     Costs ~$0.003/case. Run before releases or after major changes.
+ *   Suite 01 — Chat Intent Matching        (30 cases)  Free, instant
+ *   Suite 02 — System Prompt Quality       (15 cases)  Free, instant
+ *   Suite 03 — Technical Indicator Math    (24 cases)  Free, instant
+ *   Suite 04 — Claude Chat Quality         (17 cases)  ~$0.05, LLM judge
+ *   Suite 05 — Adversarial & Edge Cases    (12 cases)  ~$0.04, LLM judge
  *
  * ─────────────────────────────────────────────────────────────────────────────
  * USAGE:
  *
- *   # Run all suites (includes LLM suite)
- *   npx tsx evals/index.ts
- *
- *   # Run only cheap suites (no API calls)
- *   npx tsx evals/index.ts --cheap
- *
- *   # Run with verbose output (show all outputs, not just failures)
- *   VERBOSE=1 npx tsx evals/index.ts
+ *   npm run evals:cheap            # Suites 01-03 only (free, use in CI)
+ *   npm run evals                  # All suites including LLM calls
+ *   npm run evals -- --compare     # Show diff vs previous run
+ *   VERBOSE=1 npm run evals:cheap  # Show all outputs, not just failures
  *
  * ─────────────────────────────────────────────────────────────────────────────
- * GRADER TYPES (cheapest → most powerful):
+ * RESULT PERSISTENCE:
  *
- *   "exact"       — output must exactly match a string
- *   "contains"    — output must include a substring
- *   "not-contains"— output must NOT include a substring
- *   "regex"       — output must match a regular expression
- *   "llm-judge"   — a judge LLM scores the output on a criterion (1–5)
+ *   Every run saves to evals/results/TIMESTAMP.json
+ *   The latest run is always at evals/results/latest.json
+ *   The previous run is at evals/results/previous.json
+ *   Use --compare to see what changed between runs.
  *
  * ─────────────────────────────────────────────────────────────────────────────
  */
@@ -69,10 +46,12 @@ import { runChatIntentSuite } from "./cases/01-chat-intent.eval";
 import { runSystemPromptSuite } from "./cases/02-system-prompt.eval";
 import { runIndicatorsSuite } from "./cases/03-indicators.eval";
 import { runChatLLMSuite } from "./cases/04-chat-llm.eval";
-import { printSummary } from "./runner";
+import { runAdversarialSuite } from "./cases/05-adversarial.eval";
+import { printSummary, saveResults, printDiff } from "./runner";
 import type { SuiteResult } from "./types";
 
 const CHEAP_ONLY = process.argv.includes("--cheap");
+const COMPARE = process.argv.includes("--compare");
 
 async function main() {
   console.log(`
@@ -82,36 +61,36 @@ async function main() {
 ╚════════════════════════════════════════════════════════════════╝`);
 
   if (CHEAP_ONLY) {
-    console.log("\n   Mode: --cheap (skipping Suite 04 — Claude API calls)\n");
+    console.log("\n   Mode: --cheap (skipping Suites 04 & 05 — Claude API calls)\n");
   } else {
-    console.log("\n   Mode: full (includes Suite 04 — Claude API calls)\n");
-    console.log("   Tip: run with --cheap to skip Suite 04 and save API costs.\n");
+    console.log("\n   Mode: full (includes Suites 04 & 05 — Claude API calls)\n");
+    console.log("   Tip: --cheap skips LLM suites. --compare diffs against previous run.\n");
   }
 
   const allResults: SuiteResult[] = [];
 
   // ── Suite 01: Chat Intent Matching (free, deterministic) ──────────────────
-  const intentResult = await runChatIntentSuite();
-  allResults.push(intentResult);
+  allResults.push(await runChatIntentSuite());
 
   // ── Suite 02: System Prompt Quality (free, deterministic) ─────────────────
-  const promptResult = await runSystemPromptSuite();
-  allResults.push(promptResult);
+  allResults.push(await runSystemPromptSuite());
 
   // ── Suite 03: Technical Indicator Math (free, deterministic) ──────────────
-  const indicatorResults = await runIndicatorsSuite();
-  allResults.push(...indicatorResults);
+  allResults.push(...await runIndicatorsSuite());
 
-  // ── Suite 04: Claude Chat Quality (costs money, uses LLM judge) ───────────
   if (!CHEAP_ONLY) {
-    const llmResult = await runChatLLMSuite();
-    allResults.push(llmResult);
+    // ── Suite 04: Claude Chat Quality (LLM-as-judge) ────────────────────────
+    allResults.push(await runChatLLMSuite());
+
+    // ── Suite 05: Adversarial & Edge Cases (LLM-as-judge) ───────────────────
+    allResults.push(await runAdversarialSuite());
   }
 
-  // ── Final Summary ─────────────────────────────────────────────────────────
+  // ── Summary & Persistence ─────────────────────────────────────────────────
   printSummary(allResults);
+  saveResults(allResults);
+  if (COMPARE) printDiff();
 
-  // Exit with error code if any suite has failures (for CI use)
   const anyFailed = allResults.some((s) => s.failed > 0);
   process.exit(anyFailed ? 1 : 0);
 }
