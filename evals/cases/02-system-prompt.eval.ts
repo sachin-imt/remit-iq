@@ -72,7 +72,7 @@ const URGENT_CTX: RateContext = {
 
 // ─── Test Cases ───────────────────────────────────────────────────────────────
 
-const cases: EvalCase<PromptInput>[] = [
+export const cases: EvalCase<PromptInput>[] = [
   // ── Null context (fallback) ──
   {
     id: "prompt-01a",

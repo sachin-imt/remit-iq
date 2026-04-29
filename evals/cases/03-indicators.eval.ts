@@ -75,7 +75,7 @@ type IntelInput = { rates: number[] };
 
 // --- computeSMA ---
 
-const smaCases: EvalCase<SMAInput>[] = [
+export const smaCases: EvalCase<SMAInput>[] = [
   {
     id: "sma-01",
     description: "SMA of [1,2,3,4,5] over last 3 → (3+4+5)/3 = 4.000",
@@ -104,7 +104,7 @@ const smaCases: EvalCase<SMAInput>[] = [
 
 // --- computeEMA ---
 
-const emaCases: EvalCase<EMAInput>[] = [
+export const emaCases: EvalCase<EMAInput>[] = [
   {
     id: "ema-01",
     description: "EMA of flat data → equals the flat value",
@@ -130,7 +130,7 @@ const emaCases: EvalCase<EMAInput>[] = [
 
 // --- computeRSI ---
 
-const rsiCases: EvalCase<RSIInput>[] = [
+export const rsiCases: EvalCase<RSIInput>[] = [
   {
     id: "rsi-01",
     description: "RSI on flat data (no gains/losses) → returns 50 (neutral, both avgGain and avgLoss are 0)",
@@ -176,7 +176,7 @@ const rsiCases: EvalCase<RSIInput>[] = [
 
 // --- computePercentile ---
 
-const percentileCases: EvalCase<PercentileInput>[] = [
+export const percentileCases: EvalCase<PercentileInput>[] = [
   {
     id: "pct-01",
     description: "Percentile of max value in dataset → near 100%",
@@ -238,7 +238,7 @@ const percentileCases: EvalCase<PercentileInput>[] = [
 
 // --- computeVolatility ---
 
-const volatilityCases: EvalCase<VolatilityInput>[] = [
+export const volatilityCases: EvalCase<VolatilityInput>[] = [
   {
     id: "vol-01",
     description: "Volatility of flat data → 0% (no deviation)",
@@ -268,7 +268,7 @@ const volatilityCases: EvalCase<VolatilityInput>[] = [
 
 // --- computeIntelligenceFromRates (end-to-end) ---
 
-const intelligenceCases: EvalCase<IntelInput>[] = [
+export const intelligenceCases: EvalCase<IntelInput>[] = [
   {
     id: "intel-01",
     description: "Strong uptrend (90 days rising) → signal is SEND_NOW or URGENT",

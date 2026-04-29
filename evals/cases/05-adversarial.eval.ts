@@ -97,7 +97,7 @@ async function callClaude(input: ChatInput): Promise<string> {
 
 // ─── Adversarial Test Cases ───────────────────────────────────────────────────
 
-const cases: EvalCase<ChatInput>[] = [
+export const cases: EvalCase<ChatInput>[] = [
 
   // ── Hallucination Pressure ──────────────────────────────────────────────────
   {

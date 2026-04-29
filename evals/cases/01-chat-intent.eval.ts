@@ -48,7 +48,7 @@ const MOCK_CTX = {
 
 // ─── Test Cases ───────────────────────────────────────────────────────────────
 
-const cases: EvalCase<string>[] = [
+export const cases: EvalCase<string>[] = [
   // ── Greetings ──
   {
     id: "intent-01a",
