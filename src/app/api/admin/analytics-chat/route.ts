@@ -6,54 +6,13 @@
 
 import { NextResponse } from "next/server";
 import { getAnalyticsSummary } from "@/lib/db";
+import { buildAnalyticsSystemPrompt } from "@/lib/ai/analytics-system-prompt";
 
 const ADMIN_SECRET = process.env.ADMIN_SECRET || "remitiq-admin-2026";
 
 interface ChatMessage {
     role: "user" | "assistant";
     content: string;
-}
-
-function buildSystemPrompt(data: Awaited<ReturnType<typeof getAnalyticsSummary>>): string {
-    const { kpis, alertsByDay, pageViewsByDay, topPages, recentEvents, alertTypeDistribution } = data;
-
-    // Compact data formats for token efficiency (14 days max)
-    const alertTimeline = alertsByDay.slice(-14)
-        .map(d => `${d.date.slice(5)}:${d.signups}(${d.unique_users})`)
-        .join(",") || "none";
-
-    const pvTimeline = pageViewsByDay.slice(-14)
-        .map(d => `${d.date.slice(5)}:${d.views}`)
-        .join(",") || "none";
-
-    const topPagesList = topPages.slice(0, 5)
-        .map((p, i) => `${i + 1}.${p.page_path}(${p.total_views})`)
-        .join("; ");
-
-    const recentEventsList = recentEvents.slice(0, 8)
-        .map(e => `[${e.created_at.slice(11, 16)}] ${e.event_type} on ${e.page_path || ""}`)
-        .join("\n");
-
-    const alertDistArr = alertTypeDistribution.map(d => `${d.alert_type}:${d.count}`).join(", ");
-
-    return `You are RemitIQ's Analytics AI. Answer questions about user growth, traffic, and system health.
-Today: ${new Date().toISOString().slice(0, 10)}
-
-METRICS: Users:${kpis.uniqueUsers}, Alerts:${kpis.totalAlerts}, Active:${kpis.activeAlerts}, PV_Today:${kpis.todayPageViews}, PV_Week:${kpis.weekPageViews}, Events:${kpis.totalEvents}
-SIGNUPS(MM-DD:Count(Unique)): ${alertTimeline}
-VIEWS(MM-DD:Count): ${pvTimeline}
-TOP_PAGES: ${topPagesList}
-ALERTS: ${alertDistArr}
-EVENTS:
-${recentEventsList}
-
-CONTEXT:
-- App is early-stage; most signups are automated Playwright tests (automated-test@remitiq.co).
-- Organic traffic is pre-launch.
-- Providers: Wise, Remitly, TorFX, OFX, Instarem, Western Union.
-- Goal: Australians sending to India.
-
-Reply CONCISELY (<150 words). Use bullets for lists. Be honest if data is missing. No financial advice.`;
 }
 
 export async function POST(request: Request) {
@@ -80,7 +39,7 @@ export async function POST(request: Request) {
 
         // Fetch only 7 days for maximum efficiency
         const analyticsData = await getAnalyticsSummary('7d');
-        const systemPrompt = buildSystemPrompt(analyticsData);
+        const systemPrompt = buildAnalyticsSystemPrompt(analyticsData);
 
         // Minimal history (last 2 turns)
         const messages = [

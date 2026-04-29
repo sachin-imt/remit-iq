@@ -22,11 +22,15 @@
  *   Suite 03 — Technical Indicator Math    (24 cases)  Free, instant
  *   Suite 04 — Claude Chat Quality         (17 cases)  ~$0.05, LLM judge
  *   Suite 05 — Adversarial & Edge Cases    (12 cases)  ~$0.04, LLM judge
+ *   Suite 06 — Tone & Response Quality     (12 cases)  ~$0.04, LLM judge
+ *   Suite 07a — Analytics System Prompt    (6 cases)   Free, instant
+ *   Suite 07b — Analytics Chat Quality     (8 cases)   ~$0.03, LLM judge
+ *   Suite 08 — Signal Engine               (22 cases)  Free, instant
  *
  * ─────────────────────────────────────────────────────────────────────────────
  * USAGE:
  *
- *   npm run evals:cheap            # Suites 01-03 only (free, use in CI)
+ *   npm run evals:cheap            # Suites 01-03, 07a, 08 only (free, use in CI)
  *   npm run evals                  # All suites including LLM calls
  *   npm run evals -- --compare     # Show diff vs previous run
  *   VERBOSE=1 npm run evals:cheap  # Show all outputs, not just failures
@@ -47,6 +51,9 @@ import { runSystemPromptSuite } from "./cases/02-system-prompt.eval";
 import { runIndicatorsSuite } from "./cases/03-indicators.eval";
 import { runChatLLMSuite } from "./cases/04-chat-llm.eval";
 import { runAdversarialSuite } from "./cases/05-adversarial.eval";
+import { runToneQualitySuite } from "./cases/06-tone-quality.eval";
+import { runAnalyticsPromptSuite, runAnalyticsResponseSuite } from "./cases/07-analytics-chat.eval";
+import { runSignalEngineSuite } from "./cases/08-signal-engine.eval";
 import { printSummary, saveResults, printDiff } from "./runner";
 import type { SuiteResult } from "./types";
 
@@ -57,33 +64,49 @@ async function main() {
   console.log(`
 ╔════════════════════════════════════════════════════════════════╗
 ║           RemitIQ AI Eval Runner                               ║
-║           Testing: Chat · Prompts · Indicators · Claude        ║
+║           Testing: Chat · Prompts · Indicators · Signals       ║
 ╚════════════════════════════════════════════════════════════════╝`);
 
   if (CHEAP_ONLY) {
-    console.log("\n   Mode: --cheap (skipping Suites 04 & 05 — Claude API calls)\n");
+    console.log("\n   Mode: --cheap (suites 01–03, 07a, 08 only — free, no LLM calls)\n");
   } else {
-    console.log("\n   Mode: full (includes Suites 04 & 05 — Claude API calls)\n");
+    console.log("\n   Mode: full (all suites including LLM judge calls)\n");
     console.log("   Tip: --cheap skips LLM suites. --compare diffs against previous run.\n");
   }
 
   const allResults: SuiteResult[] = [];
 
-  // ── Suite 01: Chat Intent Matching (free, deterministic) ──────────────────
+  // ── Cheap suites (free, deterministic, use in CI) ─────────────────────────
+
+  // Suite 01: Chat Intent Matching
   allResults.push(await runChatIntentSuite());
 
-  // ── Suite 02: System Prompt Quality (free, deterministic) ─────────────────
+  // Suite 02: System Prompt Quality
   allResults.push(await runSystemPromptSuite());
 
-  // ── Suite 03: Technical Indicator Math (free, deterministic) ──────────────
+  // Suite 03: Technical Indicator Math
   allResults.push(...await runIndicatorsSuite());
 
+  // Suite 07a: Analytics System Prompt (cheap — prompt construction only)
+  allResults.push(await runAnalyticsPromptSuite());
+
+  // Suite 08: Signal Engine (backtest + v2 logic + multi-currency)
+  allResults.push(...await runSignalEngineSuite());
+
   if (!CHEAP_ONLY) {
-    // ── Suite 04: Claude Chat Quality (LLM-as-judge) ────────────────────────
+    // ── LLM suites (cost money — run before releases) ─────────────────────
+
+    // Suite 04: Claude Chat Quality (LLM-as-judge)
     allResults.push(await runChatLLMSuite());
 
-    // ── Suite 05: Adversarial & Edge Cases (LLM-as-judge) ───────────────────
+    // Suite 05: Adversarial & Edge Cases (LLM-as-judge)
     allResults.push(await runAdversarialSuite());
+
+    // Suite 06: Tone & Response Quality (LLM-as-judge)
+    allResults.push(await runToneQualitySuite());
+
+    // Suite 07b: Analytics Chat Quality (Claude proxy for GPT-4o-mini)
+    allResults.push(await runAnalyticsResponseSuite());
   }
 
   // ── Summary & Persistence ─────────────────────────────────────────────────

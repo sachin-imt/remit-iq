@@ -26,11 +26,16 @@ import {
 } from "./cases/03-indicators.eval";
 import { cases as llmCases } from "./cases/04-chat-llm.eval";
 import { cases as adversarialCases } from "./cases/05-adversarial.eval";
+import { cases as toneCases } from "./cases/06-tone-quality.eval";
+import { promptCases as analyticsPromptCases, responseCases as analyticsResponseCases } from "./cases/07-analytics-chat.eval";
+import { backtestCases, signalCases, v2Cases, currencyCases } from "./cases/08-signal-engine.eval";
 
 // ── Suite runners (cheap only) ────────────────────────────────────────────────
 import { runChatIntentSuite } from "./cases/01-chat-intent.eval";
 import { runSystemPromptSuite } from "./cases/02-system-prompt.eval";
 import { runIndicatorsSuite } from "./cases/03-indicators.eval";
+import { runAnalyticsPromptSuite } from "./cases/07-analytics-chat.eval";
+import { runSignalEngineSuite } from "./cases/08-signal-engine.eval";
 
 import type { EvalCase, Grader, CaseResult, SuiteResult } from "./types";
 
@@ -43,7 +48,23 @@ function serializeInput(input: unknown): string {
 
   const obj = input as Record<string, unknown>;
 
-  // Chat suites (04, 05) — ChatInput { message, ctx, currency, country }
+  // Analytics response cases (07b) — AnalyticsChatInput { question, data }
+  if ("question" in obj && "data" in obj) return String(obj.question);
+
+  // Analytics prompt cases (07a) — PromptInput { data: AnalyticsSummaryData }
+  if ("data" in obj && !("question" in obj) && !("rates" in obj)) {
+    const d = obj.data as Record<string, unknown>;
+    const kpis = d?.kpis as Record<string, unknown> | undefined;
+    return `analytics mock (${kpis?.uniqueUsers ?? "?"} users, ${kpis?.totalAlerts ?? "?"} alerts)`;
+  }
+
+  // Signal engine cases (08) — SignalInput { rates: RateDataPoint[], currency }
+  if ("rates" in obj && "currency" in obj) {
+    const arr = obj.rates as Array<{ rate: number }>;
+    return `${obj.currency}: ${arr.length} rate points (${arr[0]?.rate}→${arr[arr.length - 1]?.rate})`;
+  }
+
+  // Chat suites (04, 05, 06) — ChatInput { message, ctx, currency, country }
   if ("message" in obj) return String(obj.message);
 
   // System-prompt suite (02) — { ctx, currency, country }
@@ -95,16 +116,23 @@ interface TaggedCase {
 
 function collectAllCases(): TaggedCase[] {
   const groups: [string, EvalCase<unknown>[]][] = [
-    ["01 — Chat Intent",          intentCases as EvalCase<unknown>[]],
-    ["02 — System Prompt",        promptCases as EvalCase<unknown>[]],
-    ["03a — computeSMA",          smaCases    as EvalCase<unknown>[]],
-    ["03b — computeEMA",          emaCases    as EvalCase<unknown>[]],
-    ["03c — computeRSI",          rsiCases    as EvalCase<unknown>[]],
-    ["03d — computePercentile",   percentileCases as EvalCase<unknown>[]],
-    ["03e — computeVolatility",   volatilityCases as EvalCase<unknown>[]],
-    ["03f — Intelligence E2E",    intelligenceCases as EvalCase<unknown>[]],
-    ["04 — Claude Chat (LLM)",    llmCases    as EvalCase<unknown>[]],
-    ["05 — Adversarial",          adversarialCases as EvalCase<unknown>[]],
+    ["01 — Chat Intent",            intentCases as EvalCase<unknown>[]],
+    ["02 — System Prompt",          promptCases as EvalCase<unknown>[]],
+    ["03a — computeSMA",            smaCases    as EvalCase<unknown>[]],
+    ["03b — computeEMA",            emaCases    as EvalCase<unknown>[]],
+    ["03c — computeRSI",            rsiCases    as EvalCase<unknown>[]],
+    ["03d — computePercentile",     percentileCases as EvalCase<unknown>[]],
+    ["03e — computeVolatility",     volatilityCases as EvalCase<unknown>[]],
+    ["03f — Intelligence E2E",      intelligenceCases as EvalCase<unknown>[]],
+    ["04 — Claude Chat (LLM)",      llmCases    as EvalCase<unknown>[]],
+    ["05 — Adversarial",            adversarialCases as EvalCase<unknown>[]],
+    ["06 — Tone & Quality (LLM)",   toneCases   as EvalCase<unknown>[]],
+    ["07a — Analytics Prompt",      analyticsPromptCases as EvalCase<unknown>[]],
+    ["07b — Analytics Chat (LLM)",  analyticsResponseCases as EvalCase<unknown>[]],
+    ["08a — Backtest Mechanics",    backtestCases as EvalCase<unknown>[]],
+    ["08b — Signal Validity",       signalCases as EvalCase<unknown>[]],
+    ["08c — v2 Decision Logic",     v2Cases     as EvalCase<unknown>[]],
+    ["08d — Multi-Currency",        currencyCases as EvalCase<unknown>[]],
   ];
 
   return groups.flatMap(([suite, cases]) =>
@@ -115,7 +143,6 @@ function collectAllCases(): TaggedCase[] {
 // ─── Tab 1: Eval Cases ────────────────────────────────────────────────────────
 
 function buildCasesSheet(tagged: TaggedCase[]): XLSX.WorkSheet {
-  // Header
   const rows: unknown[][] = [[
     "Suite", "Case ID", "Description", "Input", "# Graders", "Grader 1", "Grader 2", "Grader 3", "Grader 4",
   ]];
@@ -136,7 +163,6 @@ function buildCasesSheet(tagged: TaggedCase[]): XLSX.WorkSheet {
 
   const ws = XLSX.utils.aoa_to_sheet(rows);
 
-  // Column widths
   ws["!cols"] = [
     { wch: 28 }, // Suite
     { wch: 16 }, // Case ID
@@ -154,13 +180,10 @@ function buildCasesSheet(tagged: TaggedCase[]): XLSX.WorkSheet {
 
 // ─── Tab 2: Results ───────────────────────────────────────────────────────────
 
-/** Result lookup keyed by case ID — merged from live run + latest.json. */
-type ResultMap = Map<string, { suite: string; result: CaseResult | null; fromJson: boolean }>;
+// LLM suites: NOT run live in the export; results loaded from latest.json.
+// Cheap suites (01–03, 07a, 08) are always run live.
+const LLM_SUITE_PREFIXES = ["04", "05", "06", "07b"];
 
-/**
- * Loads LLM suite results from latest.json (if available).
- * Returns a map of caseId → partial result (no output, just passed/score).
- */
 function loadLLMResultsFromJson(): Map<string, { passed: boolean; score: number }> {
   const jsonPath = path.join(__dirname, "results", "latest.json");
   if (!fs.existsSync(jsonPath)) return new Map();
@@ -171,8 +194,7 @@ function loadLLMResultsFromJson(): Map<string, { passed: boolean; score: number 
     };
     const map = new Map<string, { passed: boolean; score: number }>();
     for (const suite of data.suites) {
-      // Only include LLM suites (04, 05) from JSON — cheap suites are re-run live
-      if (suite.name.startsWith("04") || suite.name.startsWith("05")) {
+      if (LLM_SUITE_PREFIXES.some(prefix => suite.name.startsWith(prefix))) {
         for (const c of suite.cases) map.set(c.id, { passed: c.passed, score: c.score });
       }
     }
@@ -187,13 +209,11 @@ function buildResultsSheet(
   liveResults: SuiteResult[],
   jsonResults: Map<string, { passed: boolean; score: number }>
 ): XLSX.WorkSheet {
-  // Build a lookup from liveResults (cheap suites)
   const liveMap = new Map<string, CaseResult>();
   for (const suite of liveResults) {
     for (const r of suite.results) liveMap.set(r.id, r);
   }
 
-  // Header
   const rows: unknown[][] = [[
     "Suite", "Case ID", "Description", "Status", "Score %",
     "Latency (ms)", "Output Preview", "Grader Details",
@@ -258,25 +278,28 @@ async function main() {
 
   // 1. Collect all cases
   const tagged = collectAllCases();
-  console.log(`   Found ${tagged.length} total eval cases across 10 suites`);
+  const suiteCount = new Set(tagged.map(t => t.suite)).size;
+  console.log(`   Found ${tagged.length} total eval cases across ${suiteCount} suites`);
 
-  // 2. Run cheap suites to get live results (01-03)
-  console.log("\n   Running cheap suites (01–03) for live results…\n");
+  // 2. Run cheap suites live (01–03, 07a, 08)
+  console.log("\n   Running cheap suites (01–03, 07a, 08) for live results…\n");
   const liveResults: SuiteResult[] = [
     await runChatIntentSuite(),
     await runSystemPromptSuite(),
     ...await runIndicatorsSuite(),
+    await runAnalyticsPromptSuite(),
+    ...await runSignalEngineSuite(),
   ];
   const livePassed = liveResults.reduce((s, r) => s + r.passed, 0);
   const liveTotal  = liveResults.reduce((s, r) => s + r.total, 0);
   console.log(`\n   Cheap suites: ${livePassed}/${liveTotal} passed`);
 
-  // 3. Load LLM suite results from latest.json
+  // 3. Load LLM suite results from latest.json (suites 04, 05, 06, 07b)
   const jsonResults = loadLLMResultsFromJson();
   const llmFromJson = jsonResults.size;
   console.log(`   LLM suite results loaded from latest.json: ${llmFromJson} cases`);
   if (llmFromJson === 0) {
-    console.log("   Tip: run 'npm run evals' first to include Suite 04 & 05 results");
+    console.log("   Tip: run 'npm run evals' first to include Suite 04–06 & 07b results");
   }
 
   // 4. Build workbook
@@ -288,7 +311,7 @@ async function main() {
   const outPath = path.join(__dirname, "remitiq-evals.xlsx");
   XLSX.writeFile(wb, outPath);
   console.log(`\n✅ Saved → ${outPath}`);
-  console.log(`   Tab 1: ${tagged.length} eval cases`);
+  console.log(`   Tab 1: ${tagged.length} eval cases across ${suiteCount} suites`);
   console.log(`   Tab 2: ${liveTotal} live results + ${llmFromJson} from saved JSON\n`);
 }
 
