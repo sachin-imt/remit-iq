@@ -103,12 +103,12 @@ export interface IntelligenceData {
 
 // ─── Indicator Calculations ─────────────────────────────────────────────────
 
-function computeSMA(data: number[], period: number): number {
+export function computeSMA(data: number[], period: number): number {
     const slice = data.slice(-period);
     return slice.reduce((a, b) => a + b, 0) / slice.length;
 }
 
-function computeEMA(data: number[], period: number): number {
+export function computeEMA(data: number[], period: number): number {
     const k = 2 / (period + 1);
     let ema = data[0];
     for (let i = 1; i < data.length; i++) {
@@ -117,7 +117,7 @@ function computeEMA(data: number[], period: number): number {
     return ema;
 }
 
-function computeRSI(data: number[], period: number = 14): number {
+export function computeRSI(data: number[], period: number = 14): number {
     if (data.length < period + 1) return 50;
 
     const changes: number[] = [];
@@ -137,21 +137,22 @@ function computeRSI(data: number[], period: number = 14): number {
     avgGain /= period;
     avgLoss /= period;
 
-    if (avgLoss === 0) return 100;
+    if (avgLoss === 0) return avgGain === 0 ? 50 : 100;
     const rs = avgGain / avgLoss;
     return parseFloat((100 - 100 / (1 + rs)).toFixed(1));
 }
 
-function computeVolatility(data: number[], period: number): number {
+export function computeVolatility(data: number[], period: number): number {
     const slice = data.slice(-period);
     const avg = slice.reduce((a, b) => a + b, 0) / slice.length;
     const variance = slice.reduce((sum, v) => sum + (v - avg) ** 2, 0) / slice.length;
     return parseFloat((Math.sqrt(variance) / avg * 100).toFixed(2));
 }
 
-function computePercentile(current: number, data: number[]): number {
+export function computePercentile(current: number, data: number[]): number {
     const sorted = [...data].sort((a, b) => a - b);
     const index = sorted.findIndex((v) => v >= current);
+    if (index === -1) return 100; // current beats all historical values
     return parseFloat(((index / sorted.length) * 100).toFixed(0));
 }
 
